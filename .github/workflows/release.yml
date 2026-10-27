@@ -1,0 +1,77 @@
+name: Release
+
+# Push a tag such as v1.2.0 (see "Publishing a release" in the README). The Windows and macOS
+# builds are attached to a GitHub release; installed copies of the app find it from there.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Tag must match the version in package.json
+        shell: bash
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($expected). Use npm version to bump and tag together."
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm test
+      - run: npm run package:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          if-no-files-found: error
+          path: |
+            release/windows/Runners-Life-Label-Creator-Setup-*.exe
+            release/windows/Runners-Life-Label-Creator-Portable-*.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run package:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          if-no-files-found: error
+          path: |
+            release/mac/*.dmg
+            release/mac/*.zip
+
+  publish:
+    needs: [windows, macos]
+    # A macOS problem must not hold back the Windows release the shop computers wait for.
+    if: ${{ !cancelled() && needs.windows.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Write SHA256SUMS.txt
+        working-directory: assets
+        run: sha256sum * > ../SHA256SUMS.txt && mv ../SHA256SUMS.txt .
+      - name: Create the release
+        run: gh release create "$GITHUB_REF_NAME" assets/* --title "$GITHUB_REF_NAME" --generate-notes --verify-tag

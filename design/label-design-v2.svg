@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="2500" height="1350" viewBox="0 0 2500 1350">
+  <title>Runners Life 220 × 23 mm futuristic shoe label — design v2</title>
+  <desc>Compact futuristic labels using the Runners Life symbol, brand watermark, sale and regular price states.</desc>
+
+  <defs>
+    <linearGradient id="rail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e4283b"/>
+      <stop offset="0.55" stop-color="#bf1e2d"/>
+      <stop offset="1" stop-color="#720914"/>
+    </linearGradient>
+    <linearGradient id="salePanel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f2f1ef"/>
+      <stop offset="1" stop-color="#e9e7e4"/>
+    </linearGradient>
+    <linearGradient id="regularPanel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#181818"/>
+      <stop offset="1" stop-color="#050505"/>
+    </linearGradient>
+    <filter id="whiteMark" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/>
+    </filter>
+    <filter id="shadow" x="-5%" y="-30%" width="110%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .ui { font-family: "Segoe UI", Arial, sans-serif; }
+      .model { font-weight: 780; letter-spacing: -1.1px; fill: #141414; }
+      .feature { font-weight: 540; fill: #383634; }
+      .micro { font-weight: 750; letter-spacing: 2.2px; fill: #77736f; }
+      .price { font-weight: 840; letter-spacing: -3px; }
+      .old { font-weight: 650; fill: #77736f; }
+      .sale { font-weight: 850; letter-spacing: 2px; fill: #ffffff; }
+      .dimension { font-weight: 700; letter-spacing: 1.5px; fill: #bf1e2d; }
+    </style>
+
+    <!-- Standalone Runners Life symbol, cropped from the existing full logo.svg -->
+    <g id="rl-symbol">
+      <svg x="0" y="0" width="104" height="122" viewBox="0 0 128 144.6" overflow="hidden">
+        <image x="0" y="0" width="440.2" height="144.6" xlink:href="../logo.svg" filter="url(#whiteMark)"/>
+      </svg>
+    </g>
+  </defs>
+
+  <rect width="2500" height="1350" fill="#f1efec"/>
+
+  <g class="ui">
+    <text x="150" y="76" font-size="42" font-weight="780" fill="#151515">Runners Life — Label System v2</text>
+    <text x="150" y="116" font-size="22" fill="#77736f">Compact / futuristic · 220 × 23 mm · brand watermark behind content</text>
+    <text x="150" y="164" font-size="17" class="micro">TWO PRICE STATES · SALE + REGULAR</text>
+    <g transform="translate(1910 62)">
+      <line x1="0" y1="14" x2="440" y2="14" stroke="#bf1e2d" stroke-width="2"/>
+      <path d="M0 14l13-7v14zM440 14l-13-7v14z" fill="#bf1e2d"/>
+      <text x="220" y="0" text-anchor="middle" font-size="18" class="dimension">220 mm</text>
+    </g>
+  </g>
+
+  <!-- LABEL 1 · NEW BALANCE · SALE -->
+  <g transform="translate(150 220)" filter="url(#shadow)">
+    <rect width="2200" height="230" fill="#ffffff" stroke="#d6d3cf" stroke-width="2"/>
+    <rect width="170" height="230" fill="url(#rail)"/>
+    <path d="M170 0h24l-24 34z" fill="#141414"/>
+    <rect x="170" width="6" height="230" fill="#141414"/>
+    <use xlink:href="#rl-symbol" x="33" y="54"/>
+
+    <image x="500" y="64" width="960" height="152" xlink:href="assets/brands/new-balance.svg"
+           opacity="0.055" preserveAspectRatio="xMidYMax meet"/>
+    <path d="M1670 0h530v230h-570l40-46z" fill="url(#salePanel)"/>
+    <path d="M1670 0h14l-40 230h-14z" fill="#bf1e2d"/>
+
+    <g class="ui">
+      <text x="224" y="64" font-size="17" class="micro">CUSHIONED ROAD · DAILY TRAINER</text>
+      <text x="220" y="119" font-size="52" class="model">Fresh Foam X 1080 v14</text>
+      <g transform="translate(224 151)">
+        <circle cx="5" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="22" y="14" font-size="22" class="feature">Plush Fresh Foam X cushioning</text>
+        <circle cx="480" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="497" y="14" font-size="22" class="feature">Breathable engineered mesh</text>
+        <circle cx="930" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="947" y="14" font-size="22" class="feature">Smooth daily miles</text>
+      </g>
+      <rect x="1732" y="26" width="82" height="30" rx="15" fill="#bf1e2d"/>
+      <text x="1773" y="48" text-anchor="middle" font-size="15" class="sale">SALE</text>
+      <text x="1728" y="139" font-size="74" class="price" fill="#121212">$159.99</text>
+      <text x="1732" y="185" font-size="21" class="old">REGULAR $189.99</text>
+      <line x1="1828" y1="177" x2="1942" y2="177" stroke="#77736f" stroke-width="2"/>
+      <text x="1732" y="211" font-size="12" class="micro">YOU SAVE $30.00</text>
+    </g>
+    <path d="M2124 18h54v4h-50v50h-4z" fill="#bf1e2d"/>
+  </g>
+
+  <!-- LABEL 2 · SAUCONY · REGULAR -->
+  <g transform="translate(150 500)" filter="url(#shadow)">
+    <rect width="2200" height="230" fill="#ffffff" stroke="#d6d3cf" stroke-width="2"/>
+    <rect width="170" height="230" fill="url(#rail)"/>
+    <path d="M170 0h24l-24 34z" fill="#141414"/>
+    <rect x="170" width="6" height="230" fill="#141414"/>
+    <use xlink:href="#rl-symbol" x="33" y="54"/>
+
+    <image x="520" y="70" width="920" height="142" xlink:href="assets/brands/saucony.svg"
+           opacity="0.055" preserveAspectRatio="xMidYMax meet"/>
+    <path d="M1670 0h530v230h-570l40-46z" fill="url(#regularPanel)"/>
+    <path d="M1670 0h14l-40 230h-14z" fill="#bf1e2d"/>
+
+    <g class="ui">
+      <text x="224" y="64" font-size="17" class="micro">TEMPO ROAD · SPEED TRAINER</text>
+      <text x="220" y="119" font-size="52" class="model">Endorphin Speed 4</text>
+      <g transform="translate(224 151)">
+        <circle cx="5" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="22" y="14" font-size="22" class="feature">Responsive PWRRUN PB foam</text>
+        <circle cx="455" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="472" y="14" font-size="22" class="feature">Winged nylon plate</text>
+        <circle cx="810" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="827" y="14" font-size="22" class="feature">Training + race-day speed</text>
+      </g>
+      <text x="1732" y="48" font-size="14" class="micro" fill="#a9a6a2">REGULAR PRICE</text>
+      <text x="1728" y="151" font-size="78" class="price" fill="#ffffff">$229.99</text>
+      <rect x="1732" y="183" width="112" height="4" fill="#bf1e2d"/>
+      <text x="1860" y="191" font-size="13" font-weight="700" letter-spacing="1.5" fill="#b9b7b4">EVERYDAY VALUE</text>
+    </g>
+    <path d="M2124 18h54v4h-50v50h-4z" fill="#bf1e2d"/>
+  </g>
+
+  <!-- LABEL 3 · ASICS · SALE -->
+  <g transform="translate(150 780)" filter="url(#shadow)">
+    <rect width="2200" height="230" fill="#ffffff" stroke="#d6d3cf" stroke-width="2"/>
+    <rect width="170" height="230" fill="url(#rail)"/>
+    <path d="M170 0h24l-24 34z" fill="#141414"/>
+    <rect x="170" width="6" height="230" fill="#141414"/>
+    <use xlink:href="#rl-symbol" x="33" y="54"/>
+
+    <image x="610" y="55" width="760" height="160" xlink:href="assets/brands/asics.svg"
+           opacity="0.055" preserveAspectRatio="xMidYMax meet"/>
+    <path d="M1670 0h530v230h-570l40-46z" fill="url(#salePanel)"/>
+    <path d="M1670 0h14l-40 230h-14z" fill="#bf1e2d"/>
+
+    <g class="ui">
+      <text x="224" y="64" font-size="17" class="micro">STABILITY ROAD · MAX CUSHION</text>
+      <text x="220" y="119" font-size="52" class="model">GEL-KAYANO 31</text>
+      <g transform="translate(224 151)">
+        <circle cx="5" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="22" y="14" font-size="22" class="feature">4D GUIDANCE SYSTEM™</text>
+        <circle cx="402" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="419" y="14" font-size="22" class="feature">Rearfoot PureGEL™</text>
+        <circle cx="742" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="759" y="14" font-size="22" class="feature">Stable long-run comfort</text>
+      </g>
+      <rect x="1732" y="26" width="82" height="30" rx="15" fill="#bf1e2d"/>
+      <text x="1773" y="48" text-anchor="middle" font-size="15" class="sale">SALE</text>
+      <text x="1728" y="139" font-size="74" class="price" fill="#121212">$179.99</text>
+      <text x="1732" y="185" font-size="21" class="old">REGULAR $209.99</text>
+      <line x1="1828" y1="177" x2="1942" y2="177" stroke="#77736f" stroke-width="2"/>
+      <text x="1732" y="211" font-size="12" class="micro">YOU SAVE $30.00</text>
+    </g>
+    <path d="M2124 18h54v4h-50v50h-4z" fill="#bf1e2d"/>
+  </g>
+
+  <!-- LABEL 4 · BROOKS · REGULAR -->
+  <g transform="translate(150 1060)" filter="url(#shadow)">
+    <rect width="2200" height="230" fill="#ffffff" stroke="#d6d3cf" stroke-width="2"/>
+    <rect width="170" height="230" fill="url(#rail)"/>
+    <path d="M170 0h24l-24 34z" fill="#141414"/>
+    <rect x="170" width="6" height="230" fill="#141414"/>
+    <use xlink:href="#rl-symbol" x="33" y="54"/>
+
+    <image x="515" y="83" width="940" height="120" xlink:href="assets/brands/brooks.svg"
+           opacity="0.06" preserveAspectRatio="xMidYMax meet"/>
+    <path d="M1670 0h530v230h-570l40-46z" fill="url(#regularPanel)"/>
+    <path d="M1670 0h14l-40 230h-14z" fill="#bf1e2d"/>
+
+    <g class="ui">
+      <text x="224" y="64" font-size="17" class="micro">NEUTRAL ROAD · DAILY TRAINER</text>
+      <text x="220" y="119" font-size="52" class="model">Ghost 16</text>
+      <g transform="translate(224 151)">
+        <circle cx="5" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="22" y="14" font-size="22" class="feature">DNA LOFT v3 cushioning</text>
+        <circle cx="428" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="445" y="14" font-size="22" class="feature">Smooth transitions</text>
+        <circle cx="748" cy="7" r="4" fill="#bf1e2d"/>
+        <text x="765" y="14" font-size="22" class="feature">Balanced everyday comfort</text>
+      </g>
+      <text x="1732" y="48" font-size="14" class="micro" fill="#a9a6a2">REGULAR PRICE</text>
+      <text x="1728" y="151" font-size="78" class="price" fill="#ffffff">$179.99</text>
+      <rect x="1732" y="183" width="112" height="4" fill="#bf1e2d"/>
+      <text x="1860" y="191" font-size="13" font-weight="700" letter-spacing="1.5" fill="#b9b7b4">EVERYDAY VALUE</text>
+    </g>
+    <path d="M2124 18h54v4h-50v50h-4z" fill="#bf1e2d"/>
+  </g>
+
+  <g class="ui" transform="translate(96 220)">
+    <line x1="0" y1="0" x2="0" y2="230" stroke="#bf1e2d" stroke-width="2"/>
+    <path d="M0 0l-7 12h14zM0 230l-7-12h14z" fill="#bf1e2d"/>
+    <text x="-18" y="115" transform="rotate(-90 -18 115)" text-anchor="middle" font-size="18" class="dimension">23 mm</text>
+  </g>
+</svg>

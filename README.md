@@ -1,0 +1,102 @@
+# Runners Life Label Creator
+
+Offline desktop application for editing and printing Runners Life shoe-wall labels on Windows and macOS. The approved label is **220 × 23 mm** by default (the size can be adjusted, see below) and supports New Balance, Saucony, ASICS, and Brooks.
+
+## Included workflow
+
+- Add, duplicate, reorder, search, filter, and delete shoe models; every edit is immediately persisted locally.
+- Edit brand, model, regular price, optional sale price, and zero to three optional selling points.
+- Add labels to a print cart, review every selected label, and set an independent print quantity before printing.
+- Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
+- Everything is saved automatically on this computer; there is nothing to import or export.
+- **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 120–280 mm × 15–35 mm; if a change would push the shape outside 8:1–12.5:1, the other value is adjusted automatically and a notice explains it). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
+- **AI selling points**: tick labels, click `AI selling points`, copy the generated prompt into any AI tool (ChatGPT, Claude, Gemini…), paste its reply back and review it. Each label gets three selling points: shoe type (race / stability / neutral…), heel-to-toe drop, and the midsole foam technology (the brand's official foam name, e.g. PWRRUN PB, never marketing wording). Low-confidence answers are unticked and flagged so specs can be checked before printing.
+- Print through the Windows printer list or the Windows print dialog.
+- Choose `Save as PDF — local file` as a virtual printer to export the exact A4 or 220 × 23 mm print layout through a local save dialog.
+- Print one 220 × 23 mm label per page, or eight labels on an A4 landscape sheet with crop marks.
+- Per-printer X/Y scale and offset calibration, including a calibration test page.
+
+The visual rules and adjustable SVG values are documented in [docs/label-design-system.md](docs/label-design-system.md) and [design/label-design-system.json](design/label-design-system.json).
+
+## Development
+
+Requirements: Node.js 22 or newer and npm.
+
+```bash
+npm install
+npm run dev
+```
+
+Useful checks:
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+## Application icons
+
+The Windows, macOS, Electron and browser icons all come from the same Runners Life SVG master. Edit `build/icon-source.svg`, then regenerate every required PNG, ICO, ICNS, favicon and web-app size with:
+
+```bash
+npm run icons:generate
+```
+
+The complete surface and asset checklist is documented in [docs/app-icon-system.md](docs/app-icon-system.md).
+
+## Build for Windows
+
+Run this on Windows for the most predictable code-signing and printer integration result:
+
+```powershell
+npm install
+npm run package:win
+```
+
+Artifacts are written to `release/windows/` as a clearly named NSIS `Setup` installer and a `Portable` executable. The application runs entirely offline after installation; no server is required.
+
+Production distribution should add an organization-owned Windows code-signing certificate to avoid SmartScreen warnings. Local/internal testing does not require a certificate.
+
+Releases are normally built by GitHub Actions instead, see [Publishing a release](#publishing-a-release).
+
+## Updates
+
+The app looks for a newer version on this repository's [GitHub Releases](https://github.com/zijianwang90/runners-life-label-creator/releases) a few seconds after it starts and every six hours while it stays open. When one exists, an **Update to x.y.z** button appears at the top of the window; **Check for updates** in the footer checks on demand. Labels and settings live in the user-data folder, not next to the program, so they survive every update.
+
+| Copy of the app | What **Update and restart** does |
+| --- | --- |
+| Windows portable | Downloads the new `Portable` exe, replaces the running file in place (same name and folder, so shortcuts keep working) and starts it again. The folder must be writable. |
+| Windows installed (Setup) | Downloads the `Setup` exe and runs it silently over the existing installation, then reopens the app. |
+| macOS, an unpacked folder, a dev run | Cannot replace itself; opens the release page instead. |
+
+Every download must come from this repository's own release files and match the SHA-256 that GitHub publishes for the asset (or `SHA256SUMS.txt` in the release). A file that does not match is deleted and nothing is installed. Builds are not code-signed, so this protects against damaged downloads, not against someone with write access to the repository; keep the GitHub account protected with two-factor authentication.
+
+Versions before the first release with the updater cannot update themselves; install that one by hand.
+
+The repository the app reads is set by `UPDATE_REPO` in [electron/updater.ts](electron/updater.ts). It has to be public, because the app carries no GitHub token.
+
+## Publishing a release
+
+```bash
+npm version minor      # or patch / major: bumps package.json, commits and tags vX.Y.Z
+git push --follow-tags
+```
+
+The tag starts the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)). It runs the tests, builds the Windows installer and portable exe plus the macOS dmg and zip, writes `SHA256SUMS.txt` and publishes a GitHub release with generated notes. The notes show up in the app's update dialog and can be edited on GitHub afterwards. Computers running the app pick the release up on their next check.
+
+A release marked *draft* or *pre-release* is ignored by the updater, which makes it a safe way to publish something for testing first. The workflow refuses a tag that does not match the version in `package.json`.
+
+## Printing setup
+
+1. Start with **Show Windows print dialog** enabled.
+2. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
+3. In the printer driver, disable scaling options such as “Fit to page”; use 100% or Actual size.
+4. Print the calibration page, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
+5. Save a separate Windows printer preset for this label job when the driver supports presets.
+
+Application data is stored in Electron's Windows user-data folder as `labels.json` and is written atomically.
+
+## License
+
+The source code is released under the [MIT License](LICENSE). The Runners Life logo and the brand logos in `design/assets/brands/` (New Balance, Saucony, ASICS, Brooks) belong to their owners and are not covered by that license.

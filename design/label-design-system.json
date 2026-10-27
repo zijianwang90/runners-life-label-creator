@@ -1,0 +1,279 @@
+{
+  "version": "1.4.1",
+  "status": "approved-baseline",
+  "name": "Runners Life Label Scheme A",
+  "description": "Approved red-and-white shelf-label system with regular and sale price states.",
+  "units": {
+    "physical": "mm",
+    "svg": "viewBoxUnit",
+    "viewBoxUnitsPerMm": 10
+  },
+  "canvas": {
+    "widthMm": 220,
+    "heightMm": 23,
+    "viewBox": [0, 0, 2200, 230],
+    "safeArea": {
+      "top": 20,
+      "right": 20,
+      "bottom": 20,
+      "left": 20
+    },
+    "background": "#FFFFFF",
+    "border": {
+      "color": "#D1D1D1",
+      "width": 2
+    }
+  },
+  "palette": {
+    "runnersLifeRed": "#D8071B",
+    "runnersLifeRedLight": "#E30B20",
+    "runnersLifeRedDark": "#B90012",
+    "saleSealDark": "#80000C",
+    "ink": "#0C0C0D",
+    "bodyText": "#252526",
+    "divider": "#B9B9B9",
+    "paper": "#FFFFFF"
+  },
+  "layout": {
+    "runnersLifeMarkRegion": {
+      "x": 0,
+      "y": 0,
+      "width": 250,
+      "height": 230,
+      "polygon": [[0, 0], [250, 0], [215, 230], [0, 230]],
+      "medallion": {
+        "enabled": false,
+        "centerX": 105,
+        "centerY": 115,
+        "radius": 92,
+        "fill": "#FFFFFF"
+      },
+      "symbolBounds": {
+        "x": 18,
+        "y": 18,
+        "width": 172,
+        "height": 194
+      }
+    },
+    "brandRegion": {
+      "x": 250,
+      "y": 0,
+      "width": 350,
+      "height": 230,
+      "artBounds": {
+        "x": 270,
+        "y": 45,
+        "width": 300,
+        "height": 140
+      },
+      "dividerX": 600
+    },
+    "productRegion": {
+      "x": 600,
+      "y": 0,
+      "width": 1068,
+      "height": 230,
+      "model": {
+        "x": 650,
+        "baselineY": 105,
+        "noFeaturesBaselineY": 137,
+        "maxWidth": 950
+      },
+      "features": {
+        "x": 653,
+        "baselineY": 162,
+        "separatorY1": 140,
+        "separatorY2": 170,
+        "separatorXs": [979, 1293]
+      }
+    },
+    "priceRegion": {
+      "x": 1668,
+      "y": 0,
+      "width": 532,
+      "height": 230,
+      "polygon": [[1730, 0], [2200, 0], [2200, 230], [1668, 230]]
+    }
+  },
+  "runnersLifeMark": {
+    "asset": "../logo.svg",
+    "sourceCropViewBox": [0, 0, 128, 144.6],
+    "colorMode": "white-knockout-on-red",
+    "whiteColor": "#FFFFFF",
+    "allowRecolor": true,
+    "allowNonUniformScale": false,
+    "preserveAspectRatio": "xMidYMid meet",
+    "minimumClearSpace": 12,
+    "displayOnWhiteMedallion": false
+  },
+  "brandLogos": {
+    "preserveAspectRatio": "xMidYMid meet",
+    "allowStretch": false,
+    "allowRecolor": false,
+    "containerWidth": 350,
+    "containerHeight": 230,
+    "artBounds": [270, 45, 300, 140],
+    "brands": {
+      "new-balance": {
+        "asset": "assets/brands/new-balance.svg",
+        "primaryColor": "#E21836",
+        "opticalScale": 0.86,
+        "opticalOffsetX": 0,
+        "opticalOffsetY": 0
+      },
+      "saucony": {
+        "asset": "assets/brands/saucony.svg",
+        "primaryColor": "#231F20",
+        "opticalScale": 1.0,
+        "opticalOffsetX": 0,
+        "opticalOffsetY": 0
+      },
+      "asics": {
+        "asset": "assets/brands/asics.svg",
+        "primaryColor": "#000066",
+        "opticalScale": 0.88,
+        "opticalOffsetX": 0,
+        "opticalOffsetY": 0
+      },
+      "brooks": {
+        "asset": "assets/brands/brooks.svg",
+        "primaryColor": "#3275BF",
+        "opticalScale": 1.0,
+        "opticalOffsetX": 0,
+        "opticalOffsetY": 0
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": ["Barlow Condensed", "Arial Narrow", "Segoe UI", "Arial", "sans-serif"],
+    "fontSource": "bundled-offline",
+    "model": {
+      "fontSize": 58,
+      "fontWeight": 800,
+      "letterSpacing": -1.1,
+      "textTransform": "uppercase",
+      "maxLines": 1,
+      "minimumFontSize": 46
+    },
+    "feature": {
+      "fontSize": 21,
+      "fontWeight": 600,
+      "letterSpacing": 0,
+      "textTransform": "uppercase",
+      "maxLines": 1,
+      "minimumFontSize": 17
+    },
+    "price": {
+      "fontSize": 88,
+      "fontWeight": 900,
+      "letterSpacing": -1.5,
+      "fontVariantNumeric": "tabular-nums lining-nums",
+      "segmentedAmount": {
+        "currencyFontSize": 36,
+        "integerFontSize": 88,
+        "centsFontSize": 50,
+        "currencyBaselineLiftRatio": 0.27
+      }
+    },
+    "micro": {
+      "fontSize": 19,
+      "fontWeight": 800,
+      "letterSpacing": 2
+    }
+  },
+  "pricingStates": {
+    "regular": {
+      "showSaleSeal": false,
+      "showRegularPriceLabel": false,
+      "showPriceUnderline": false,
+      "showOriginalPrice": false,
+      "showSavings": false,
+      "price": {
+        "centerX": 1950,
+        "baselineY": 157,
+        "fontSize": 88,
+        "currencyFontSize": 36,
+        "centsFontSize": 50
+      }
+    },
+    "sale": {
+      "showSaleSeal": true,
+      "showRegularPriceLabel": false,
+      "showOriginalPrice": true,
+      "showSavings": true,
+      "validation": "salePrice < regularPrice",
+      "saleSeal": {
+        "type": "circular-stamp",
+        "centerX": 1698,
+        "centerY": 76,
+        "outerRadius": 72,
+        "innerRadius": 59,
+        "rotationDegrees": -10,
+        "fill": "#FFFFFF",
+        "outerStroke": "#80000C",
+        "outerStrokeWidth": 7,
+        "innerStroke": "#D4081B",
+        "innerStrokeWidth": 2.5,
+        "innerStrokeDashArray": [6, 4],
+        "text": "SALE",
+        "textColor": "#C7081A",
+        "fontSize": 35,
+        "fontWeight": 800
+      },
+      "originalPrice": {
+        "centerX": 2025,
+        "baselineY": 45,
+        "fontSize": 18,
+        "strikeThrough": true
+      },
+      "salePrice": {
+        "centerX": 1980,
+        "baselineY": 137,
+        "fontSize": 82,
+        "currencyFontSize": 34,
+        "centsFontSize": 46
+      },
+      "savingsBadge": {
+        "x": 1867,
+        "y": 158,
+        "width": 226,
+        "height": 40,
+        "format": "SAVE {amount}"
+      }
+    }
+  },
+  "contentRules": {
+    "modelRequired": true,
+    "regularPriceRequired": true,
+    "salePriceOptional": true,
+    "featureCount": {
+      "min": 0,
+      "max": 3,
+      "preferred": 3
+    },
+    "featureIcons": false,
+    "featureSeparators": true,
+    "overflow": {
+      "model": "reduce-font-size-to-minimum-then-show-validation-error",
+      "features": "show-validation-error-no-wrapping",
+      "price": "fixed-format-two-decimals"
+    }
+  },
+  "backgroundTexture": {
+    "enabled": true,
+    "type": "diagonal-speed-lines",
+    "angleDegrees": 24,
+    "spacing": 18,
+    "lineWidth": 1,
+    "opacity": 0.08,
+    "applyTo": ["runnersLifeMarkRegion", "priceRegion"]
+  },
+  "print": {
+    "scalePercent": 100,
+    "allowFitToPage": false,
+    "printBackground": true,
+    "bleedMm": 0,
+    "recommendedPaperModes": ["custom-220x23mm", "a4-landscape-imposition"],
+    "physicalToleranceMm": 0.5
+  }
+}

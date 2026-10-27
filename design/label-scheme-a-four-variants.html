@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>方案 A · Four Production States</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 2500px; height: 1370px; overflow: hidden; }
+    body { background: #f2f0ed; font-family: "Segoe UI", Arial, sans-serif; padding: 28px 150px; }
+    h1 { margin: 0; font-size: 42px; line-height: 1.2; }
+    .sub { margin: 10px 0 30px; color: #77736f; font-size: 22px; }
+    .row { position: relative; margin: 0 0 21px; }
+    .caption { height: 27px; color: #77736f; font-size: 17px; font-weight: 800; letter-spacing: 2px; }
+    object { display: block; width: 2200px; height: 230px; background: white; box-shadow: 0 9px 22px rgba(0,0,0,.14); }
+    .badge { position: absolute; left: -66px; top: 78px; width: 46px; height: 46px; border-radius: 50%; color: white; background: #d5091d; display: grid; place-items: center; font-size: 25px; font-weight: 900; }
+    .dark .badge { background: #151515; }
+  </style>
+</head>
+<body>
+  <h1>方案 A · Four Production States</h1>
+  <div class="sub">220 × 23 mm · Runners Life symbol / brand / model / 3 selling points / price</div>
+  <div class="row"><div class="badge">1</div><div class="caption">RED / WHITE · SALE</div><object data="variants/label-a-red-white-sale.svg" type="image/svg+xml"></object></div>
+  <div class="row"><div class="badge">2</div><div class="caption">RED / WHITE · REGULAR PRICE</div><object data="variants/label-a-red-white-regular.svg" type="image/svg+xml"></object></div>
+  <div class="row dark"><div class="badge">3</div><div class="caption">RED / BLACK · SALE</div><object data="variants/label-a-red-black-sale.svg" type="image/svg+xml"></object></div>
+  <div class="row dark"><div class="badge">4</div><div class="caption">RED / BLACK · REGULAR PRICE</div><object data="variants/label-a-red-black-regular.svg" type="image/svg+xml"></object></div>
+</body>
+</html>

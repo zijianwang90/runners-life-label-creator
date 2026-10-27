@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Runners Life Label Creator app icon</title>
+  <defs>
+    <linearGradient id="appRed" x1="104" y1="80" x2="920" y2="944" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F21B31"/>
+      <stop offset="0.48" stop-color="#D8071B"/>
+      <stop offset="1" stop-color="#9E0011"/>
+    </linearGradient>
+    <linearGradient id="edgeGlow" x1="190" y1="112" x2="810" y2="920" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#2B0007" stop-opacity="0.28"/>
+    </linearGradient>
+    <pattern id="speedLines" width="72" height="72" patternUnits="userSpaceOnUse" patternTransform="rotate(24)">
+      <line x1="0" y1="0" x2="0" y2="72" stroke="#FFFFFF" stroke-width="5" stroke-opacity="0.055"/>
+    </pattern>
+    <clipPath id="tileClip"><rect x="48" y="48" width="928" height="928" rx="218"/></clipPath>
+    <clipPath id="logoCrop"><rect width="128" height="144.6"/></clipPath>
+    <filter id="whiteKnockout" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/>
+    </filter>
+    <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#450008" flood-opacity="0.34"/>
+    </filter>
+    <filter id="markShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#68000C" flood-opacity="0.30"/>
+    </filter>
+  </defs>
+  <g filter="url(#tileShadow)">
+    <rect x="48" y="48" width="928" height="928" rx="218" fill="url(#appRed)"/>
+    <rect x="48" y="48" width="928" height="928" rx="218" fill="url(#speedLines)"/>
+    <rect x="61" y="61" width="902" height="902" rx="205" fill="none" stroke="url(#edgeGlow)" stroke-width="18"/>
+    <path d="M-6 754 C254 608 509 698 1036 342 L1036 1024 L-6 1024 Z" fill="#82000E" opacity="0.09" clip-path="url(#tileClip)"/>
+  </g>
+  <g transform="translate(-8 8) scale(6.8)" clip-path="url(#logoCrop)" filter="url(#markShadow)">
+    <image href="../../logo.svg" xlink:href="../../logo.svg" width="440.2" height="144.6" preserveAspectRatio="xMinYMid meet" filter="url(#whiteKnockout)"/>
+  </g>
+</svg>

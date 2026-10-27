@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="220mm" height="23mm" viewBox="0 0 2200 230">
+  <title>方案 A — 红黑常规价格标签</title>
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0162c"/><stop offset="1" stop-color="#ad0010"/>
+    </linearGradient>
+    <linearGradient id="black" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#171719"/><stop offset="1" stop-color="#080809"/>
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.045"/>
+    </pattern>
+    <filter id="white"><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter>
+    <clipPath id="runnerCrop"><rect width="128" height="144.6"/></clipPath>
+    <style>
+      .ui{font-family:"Arial Narrow","Roboto Condensed","Segoe UI",Arial,sans-serif}
+      .model{font-weight:900;letter-spacing:-1.5px;fill:#fff}
+      .feature{font-weight:600;fill:#e7e7e8}
+      .micro{font-weight:800;letter-spacing:2.3px}
+      .price{font-weight:900;letter-spacing:-2px;fill:#fff}
+    </style>
+  </defs>
+  <rect width="2200" height="230" fill="url(#black)"/>
+  <rect width="2200" height="230" fill="url(#grid)"/>
+  <rect x="1" y="1" width="2198" height="228" fill="none" stroke="#2f2f32" stroke-width="2"/>
+  <path d="M0 0H300L248 230H0Z" fill="url(#red)"/>
+  <svg x="68" y="43" width="112" height="144" viewBox="0 0 128 144.6" overflow="hidden" clip-path="url(#runnerCrop)">
+    <image width="440.2" height="144.6" xlink:href="../../logo.svg" filter="url(#white)"/>
+  </svg>
+  <image x="330" y="65" width="260" height="92" xlink:href="../assets/brands/saucony.svg"
+         filter="url(#white)" preserveAspectRatio="xMidYMid meet"/>
+  <line x1="625" y1="42" x2="625" y2="188" stroke="#555559" stroke-width="2"/>
+  <g class="ui">
+    <text x="675" y="105" font-size="54" class="model">ENDORPHIN SPEED 5</text>
+    <text x="678" y="162" font-size="20" class="feature">LIGHTWEIGHT &amp; RESPONSIVE</text>
+    <line x1="1004" y1="140" x2="1004" y2="170" stroke="#ef1930" stroke-width="2"/>
+    <text x="1032" y="162" font-size="20" class="feature">SPEEDROLL TECHNOLOGY</text>
+    <line x1="1318" y1="140" x2="1318" y2="170" stroke="#ef1930" stroke-width="2"/>
+    <text x="1346" y="162" font-size="20" class="feature">BUILT FOR TEMPO RUNS</text>
+  </g>
+  <path d="M1730 0H2200V230H1668Z" fill="url(#red)"/>
+  <g class="ui" text-anchor="middle">
+    <text x="1940" y="65" font-size="17" class="micro" fill="#fff">REGULAR PRICE</text>
+    <text x="1936" y="153" font-size="68" class="price">$229.99</text>
+    <line x1="1874" y1="181" x2="1998" y2="181" stroke="#fff" stroke-width="3" opacity="0.9"/>
+  </g>
+</svg>

@@ -1,0 +1,117 @@
+{
+  "name": "runners-life-label-creator",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Runners Life",
+  "description": "Offline desktop label editor and printer for Runners Life shoe-wall labels.",
+  "license": "MIT",
+  "homepage": "https://github.com/zijianwang90/runners-life-label-creator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zijianwang90/runners-life-label-creator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zijianwang90/runners-life-label-creator/issues"
+  },
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "npm run build:electron && concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "dev:web": "vite",
+    "typecheck": "tsc --noEmit",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build": "npm run typecheck && npm run build:renderer && npm run build:electron",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "prepackage:win": "npm run icons:generate",
+    "package:win": "npm run build && electron-builder --win --x64 --publish never",
+    "prepackage:mac": "npm run icons:generate",
+    "package:mac": "npm run build && electron-builder --mac --universal --publish never --config.directories.output=release/mac",
+    "prepackage:dir": "npm run icons:generate",
+    "package:dir": "npm run build && electron-builder --dir --publish never"
+  },
+  "dependencies": {
+    "@fontsource/barlow-condensed": "^5.2.8",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
+    "jsdom": "^25.0.1",
+    "png2icons": "^2.0.1",
+    "sharp": "^0.35.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "ca.runnerslife.labelcreator",
+    "productName": "Runners Life Label Creator",
+    "asar": true,
+    "directories": {
+      "output": "release/windows"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "Runners-Life-Label-Creator-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "icon": "build/icons",
+      "category": "Office"
+    },
+    "nsis": {
+      "installerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "Runners-Life-Label-Creator-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "Runners-Life-Label-Creator-Portable-${arch}.${ext}"
+    }
+  }
+}
