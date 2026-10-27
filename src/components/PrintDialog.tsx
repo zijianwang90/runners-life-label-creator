@@ -2,7 +2,7 @@ import { FileDown, Minus, Plus, Printer, Ruler, Trash2, X } from "lucide-react";
 import type { AppSettings, ShoeLabel } from "../types";
 import { expandLabelCopies } from "../utils/labels";
 import { a4Layout, formatLabelSize } from "../utils/labelSize";
-import { LabelSvg } from "./LabelSvg";
+import { LabelSvg, labelScaleProps } from "./LabelSvg";
 
 interface PrintDialogProps {
   open: boolean;
@@ -58,7 +58,7 @@ export function PrintDialog(props: PrintDialogProps) {
             <div className="print-cart-list">
               {props.shoes.map((shoe) => (
                 <article className="print-cart-item" key={shoe.id}>
-                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} modelScale={props.settings.modelTextScale} featureScale={props.settings.featureTextScale} priceScale={props.settings.priceTextScale} /></div>
+                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} {...labelScaleProps(props.settings)} /></div>
                   <div className="cart-item-controls">
                     <span>Copies</span>
                     <div className="quantity-stepper">

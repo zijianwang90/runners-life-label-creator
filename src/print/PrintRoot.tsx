@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { LabelSvg } from "../components/LabelSvg";
+import { LabelSvg, labelScaleProps } from "../components/LabelSvg";
 import type { CalibrationSettings, LabelSize, PrintPayload, ShoeLabel } from "../types";
 import { expandLabelCopies, paginate } from "../utils/labels";
 import { a4Layout, clampLabelSize, clampTextScale, formatLabelSize, formatMm } from "../utils/labelSize";
@@ -11,10 +11,12 @@ const calibratedStyle = (calibration: CalibrationSettings): CSSProperties => ({
   transform: `translate(${calibration.offsetXmm}mm, ${calibration.offsetYmm}mm) scale(${calibration.scaleX}, ${calibration.scaleY})`
 });
 
-const textScaleProps = (payload: PrintPayload) => ({
-  modelScale: clampTextScale("model", payload.modelTextScale),
-  featureScale: clampTextScale("feature", payload.featureTextScale),
-  priceScale: clampTextScale("price", payload.priceTextScale)
+const textScaleProps = (payload: PrintPayload) => labelScaleProps({
+  modelTextScale: clampTextScale("model", payload.modelTextScale),
+  featureTextScale: clampTextScale("feature", payload.featureTextScale),
+  priceTextScale: clampTextScale("price", payload.priceTextScale),
+  regularPriceTextScale: clampTextScale("regular", payload.regularPriceTextScale),
+  saleSealScale: clampTextScale("seal", payload.saleSealScale)
 });
 
 function CropMarks() {

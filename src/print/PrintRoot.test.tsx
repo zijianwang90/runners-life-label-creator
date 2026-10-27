@@ -26,6 +26,8 @@ function renderJob(patch: Partial<PrintPayload>) {
     modelTextScale: defaultSettings.modelTextScale,
     featureTextScale: defaultSettings.featureTextScale,
     priceTextScale: defaultSettings.priceTextScale,
+    regularPriceTextScale: defaultSettings.regularPriceTextScale,
+    saleSealScale: defaultSettings.saleSealScale,
     calibration: defaultSettings.calibration,
     ...patch
   };
@@ -77,9 +79,9 @@ describe("print document at other label sizes", () => {
   it("prints the selling points at the chosen size", () => {
     const featureSizes = (container: HTMLElement) =>
       [...container.querySelectorAll("svg.label-svg text")].filter((text) => text.getAttribute("y") === "162").map((text) => text.getAttribute("font-size"));
-    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")] }).container)).toEqual(["21", "21", "21"]);
+    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")] }).container)).toEqual(["31.5", "31.5", "31.5"]);
     cleanup();
-    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
+    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")], featureTextScale: 1 }).container)).toEqual(["21", "21", "21"]);
     cleanup();
     expect(featureSizes(renderJob({ mode: "a4", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
   });

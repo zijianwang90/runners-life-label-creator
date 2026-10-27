@@ -23,7 +23,7 @@ const draw = (size?: LabelSize, featureScale?: number, label: ShoeLabel = shoe) 
   const svg = container.querySelector("svg")!;
   const points = (index: number) => svg.querySelectorAll("polygon")[index].getAttribute("points")!.split(" ").map((pair) => pair.split(",").map(Number));
   // The two content groups of the logo and price blocks; the rotated SALE seal is a group too, but not one of them.
-  const transforms = [...svg.querySelectorAll("g[transform]")].map((group) => group.getAttribute("transform")!).filter((transform) => transform.includes("scale("));
+  const transforms = [...svg.querySelectorAll("g[transform]")].map((group) => group.getAttribute("transform")!).filter((transform) => transform.includes("scale(") && !transform.includes("rotate("));
   const texts = [...svg.querySelectorAll("text")];
   const separators = [...svg.querySelectorAll("line")].filter((line) => line.getAttribute("y1") !== line.getAttribute("y2") && line.getAttribute("x1") !== "0" && line.getAttribute("x1") !== "600");
   return { svg, points, transforms, texts, separators };
@@ -60,13 +60,16 @@ describe("selling point text size", () => {
     expect(separators.map((line) => [line.getAttribute("y1"), line.getAttribute("y2")])).toEqual([["129", "174"], ["129", "174"]]);
   });
 
-  it("makes the text smaller too when asked", () => {
-    expect(featureSizes(draw(undefined, 0.8).texts)).toEqual([16.8, 16.8, 16.8]);
+  it("makes the text smaller too when asked, down to 60% of the shop standard", () => {
+    expect(featureSizes(draw(undefined, 0.9).texts)).toEqual([18.9, 18.9, 18.9]);
+    cleanup();
+    expect(featureSizes(draw(undefined, 0.5).texts)).toEqual([18.9, 18.9, 18.9]);
   });
 
-  it("treats an unusable value as the approved size", () => {
-    expect(featureSizes(draw(undefined, Number.NaN).texts)).toEqual([21, 21, 21]);
-    expect(featureSizes(draw(undefined, 9).texts)).toEqual([35.7, 35.7, 35.7]);
+  it("treats an unusable value as the shop standard and caps a large one", () => {
+    expect(featureSizes(draw(undefined, Number.NaN).texts)).toEqual([31.5, 31.5, 31.5]);
+    cleanup();
+    expect(featureSizes(draw(undefined, 9).texts)).toEqual([40.95, 40.95, 40.95]);
   });
 
   it("lets a phrase that is too long for its space shrink, but not below the approved design's smallest text", () => {
@@ -94,7 +97,7 @@ describe("model name and price text size", () => {
   it("scales the model name", () => {
     expect(modelSize(drawScaled({ modelScale: 1.4 }))).toBeCloseTo(81.2, 5);
     cleanup();
-    expect(modelSize(drawScaled({ modelScale: 9 }))).toBeCloseTo(81.2, 5);
+    expect(modelSize(drawScaled({ modelScale: 9 }))).toBeCloseTo(98.02, 5);
   });
 
   it("scales every part of the sale and regular price", () => {
@@ -103,6 +106,35 @@ describe("model name and price text size", () => {
     expect(priceTspans(drawScaled({ priceScale: 1.25 }, { ...shoe, salePrice: null }))).toEqual([45, 110, 62.5]);
     cleanup();
     expect(priceTspans(drawScaled({}))).toEqual([34, 82, 46]);
+  });
+});
+
+describe("sale regular price and seal size", () => {
+  const drawSale = (props: { regularScale?: number; sealScale?: number }) => {
+    const svg = render(<LabelSvg shoe={shoe} {...props} />).container.querySelector("svg")!;
+    const regular = [...svg.querySelectorAll("text")].find((text) => text.textContent?.startsWith("REG."))!;
+    const strike = [...svg.querySelectorAll("line")].find((line) => line.getAttribute("y1") === line.getAttribute("y2"))!;
+    const seal = [...svg.querySelectorAll("g[transform]")].map((group) => group.getAttribute("transform")!).find((transform) => transform.includes("rotate("))!;
+    return { regular, strike, seal };
+  };
+
+  it("draws the approved regular price, strike and seal at 1", () => {
+    const { regular, strike, seal } = drawSale({});
+    expect(regular.getAttribute("font-size")).toBe("18");
+    expect([strike.getAttribute("x1"), strike.getAttribute("x2"), strike.getAttribute("y1")]).toEqual(["1941", "2109", "38"]);
+    expect(seal).toBe("translate(1698 76) rotate(-10) scale(1)");
+  });
+
+  it("grows the regular price upwards and lengthens the strike to cover it", () => {
+    const { regular, strike } = drawSale({ regularScale: 1.95 });
+    expect(regular.getAttribute("font-size")).toBe("35.1");
+    expect(regular.getAttribute("y")).toBe("45");
+    expect(Number(strike.getAttribute("y1"))).toBeCloseTo(45 - (35.1 * 7) / 18, 3);
+    expect(Number(strike.getAttribute("x2")) - Number(strike.getAttribute("x1"))).toBeGreaterThan(168);
+  });
+
+  it("grows the seal down and to the right, keeping its top edge in place", () => {
+    expect(drawSale({ sealScale: 1.2 }).seal).toBe("translate(1705.2 91.1) rotate(-10) scale(1.2)");
   });
 });
 

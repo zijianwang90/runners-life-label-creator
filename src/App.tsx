@@ -203,6 +203,8 @@ export default function App() {
         modelTextScale: data.settings.modelTextScale,
         featureTextScale: data.settings.featureTextScale,
         priceTextScale: data.settings.priceTextScale,
+        regularPriceTextScale: data.settings.regularPriceTextScale,
+        saleSealScale: data.settings.saleSealScale,
         calibration: data.settings.calibration
       });
       if (result.success) {

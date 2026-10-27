@@ -1,9 +1,9 @@
 import { useId } from "react";
 import designTokens from "../../design/label-design-system.json";
 import { brandLogos, runnersLifeLogo } from "../assets";
-import type { LabelSize, ShoeLabel } from "../types";
+import type { LabelSize, ShoeLabel, TextScales } from "../types";
 import { featureFontSize, formatMoney, getPriceState, modelFontSize, moneyParts, savingsAmount } from "../utils/labels";
-import { BASE_DESIGN_WIDTH, computeLabelLayout, DESIGN_HEIGHT, designWidth, fitText } from "../utils/labelLayout";
+import { BASE_DESIGN_WIDTH, computeLabelLayout, DESIGN_HEIGHT, designWidth, estimateTextWidth, fitText } from "../utils/labelLayout";
 import { clampTextScale, DEFAULT_LABEL_SIZE } from "../utils/labelSize";
 
 const LABEL_FONT = '"Barlow Condensed", "Arial Narrow", "Segoe UI", Arial, sans-serif';
@@ -53,14 +53,27 @@ interface LabelSvgProps {
   featureScale?: number;
   /** Size of the price relative to the approved design; 1 draws exactly the approved label. */
   priceScale?: number;
+  /** Size of the struck-through regular price on sale labels; 1 draws exactly the approved label. */
+  regularScale?: number;
+  /** Size of the SALE seal; 1 draws exactly the approved label. */
+  sealScale?: number;
   className?: string;
   title?: string;
 }
 
 const round = (value: number) => Math.round(value * 1000) / 1000;
+
+/** The saved sizes as `LabelSvg` props. */
+export const labelScaleProps = (scales: TextScales) => ({
+  modelScale: scales.modelTextScale,
+  featureScale: scales.featureTextScale,
+  priceScale: scales.priceTextScale,
+  regularScale: scales.regularPriceTextScale,
+  sealScale: scales.saleSealScale
+});
 const PRICE_POLYGON = [[1730, 0], [2200, 0], [2200, 230], [1668, 230]] as const;
 
-export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, modelScale = 1, featureScale = 1, priceScale = 1, className = "", title }: LabelSvgProps) {
+export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, modelScale = 1, featureScale = 1, priceScale = 1, regularScale = 1, sealScale = 1, className = "", title }: LabelSvgProps) {
   const rawId = useId().replace(/:/g, "");
   const speedPatternId = `speed-${rawId}`;
   const runnerClipId = `runner-${rawId}`;
@@ -74,6 +87,12 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const modelTextScale = clampTextScale("model", modelScale);
   const priceTextScale = clampTextScale("price", priceScale);
   const priceSize = (approved: number) => round(approved * priceTextScale);
+  // The struck-through "REG." price grows upwards from its baseline; the strike stays through its middle and
+  // at least as long as the approved 168-unit line.
+  const regularText = `REG. ${formatMoney(shoe.regularPrice, currencySymbol)}`;
+  const regularSize = round(18 * clampTextScale("regular", regularScale));
+  const strikeHalf = round(Math.max(168, estimateTextWidth(regularText, regularSize, 600) + 24) / 2);
+  const strikeY = round(45 - (regularSize * 7) / 18);
   // The divider between selling points grows with their text: 140–170 at the approved 21-unit size.
   const separatorTop = round(162 - 22 * textScale);
   const separatorBottom = round(162 + 8 * textScale);
@@ -95,6 +114,11 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const brandY = artY + (artHeight - brandHeight) / 2 + brandConfig.opticalOffsetY;
   const mark = designTokens.layout.runnersLifeMarkRegion;
   const seal = designTokens.pricingStates.sale.saleSeal;
+  // The seal grows down and to the right so its top stays inside the label and its left side stays clear of the text.
+  const sealSize = clampTextScale("seal", sealScale);
+  const sealReach = seal.outerRadius + seal.outerStrokeWidth / 2;
+  const sealX = round(seal.centerX + seal.outerRadius * (sealSize - 1) * 0.5);
+  const sealY = round(seal.centerY + sealReach * (sealSize - 1));
   const runnerImageWidth = mark.symbolBounds.height * (440.2 / 144.6);
 
   // On labels narrower than the approved one the logo and price blocks shrink. Their shapes narrow in x
@@ -217,7 +241,7 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
 
         {priceState === "sale" ? (
           <>
-            <g transform={`translate(${seal.centerX} ${seal.centerY}) rotate(${seal.rotationDegrees})`}>
+            <g transform={`translate(${sealX} ${sealY}) rotate(${seal.rotationDegrees}) scale(${sealSize})`}>
               <circle r={seal.outerRadius} fill={seal.fill} stroke={seal.outerStroke} strokeWidth={seal.outerStrokeWidth} />
               <circle
                 r={seal.innerRadius}
@@ -245,13 +269,13 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
               textAnchor="middle"
               fill="#fff"
               fontFamily={LABEL_FONT}
-              fontSize="18"
+              fontSize={regularSize}
               fontWeight="600"
               style={{ fontVariantNumeric: "tabular-nums lining-nums" }}
             >
-              REG. {formatMoney(shoe.regularPrice, currencySymbol)}
+              {regularText}
             </text>
-            <line x1="1941" y1="38" x2="2109" y2="38" stroke="#fff" strokeWidth="2" />
+            <line x1={round(2025 - strikeHalf)} y1={strikeY} x2={round(2025 + strikeHalf)} y2={strikeY} stroke="#fff" strokeWidth="2" />
             <PriceAmount
               value={displayedPrice}
               currencySymbol={currencySymbol}

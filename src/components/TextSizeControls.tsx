@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { TextScales } from "../types";
-import { clampTextScale, TEXT_SCALE_LIMITS, textPrintSize, type TextKind } from "../utils/labelSize";
+import { clampTextScale, percentToScale, scaleToPercent, TEXT_SCALE_LIMITS, textPrintSize, type TextKind } from "../utils/labelSize";
 
 interface TextSizeControlsProps {
   scales: TextScales;
@@ -13,10 +13,12 @@ interface TextSizeControlsProps {
 const ROWS: { kind: TextKind; key: keyof TextScales; name: string; title: string }[] = [
   { kind: "model", key: "modelTextScale", name: "Model name", title: "Model" },
   { kind: "feature", key: "featureTextScale", name: "Selling point", title: "Selling points" },
-  { kind: "price", key: "priceTextScale", name: "Price", title: "Price" }
+  { kind: "price", key: "priceTextScale", name: "Price", title: "Price" },
+  { kind: "regular", key: "regularPriceTextScale", name: "Sale regular price", title: "Reg. price" },
+  { kind: "seal", key: "saleSealScale", name: "Sale seal", title: "Sale seal" }
 ];
 
-const PRESETS = [100, 115, 130, 150] as const;
+const PRESETS = [80, 90, 100, 115, 130] as const;
 
 interface TextSizeRowProps {
   kind: TextKind;
@@ -27,14 +29,16 @@ interface TextSizeRowProps {
   onChange: (scale: number) => void;
 }
 
-/** One slider and percent field; a typed number applies once it is in range and is clamped when leaving the field. */
+/**
+ * One slider and percent field, in percent of the shop's standard size; a typed number applies once it is
+ * in range and is clamped when leaving the field.
+ */
 function TextSizeRow({ kind, name, title, scale: requestedScale, heightMm, onChange }: TextSizeRowProps) {
   const limits = TEXT_SCALE_LIMITS[kind];
-  const minPercent = Math.round(limits.min * 100);
-  const maxPercent = Math.round(limits.max * 100);
-  const toScale = (percent: number) => clampTextScale(kind, percent / 100);
+  const { minPercent, maxPercent } = limits;
+  const toScale = (percent: number) => percentToScale(kind, percent);
   const scale = clampTextScale(kind, requestedScale);
-  const percent = Math.round(scale * 100);
+  const percent = scaleToPercent(kind, scale);
   const [draft, setDraft] = useState(String(percent));
   const editing = useRef(false);
 
@@ -50,7 +54,7 @@ function TextSizeRow({ kind, name, title, scale: requestedScale, heightMm, onCha
     const parsed = Number(text);
     if (text.trim() === "" || !Number.isFinite(parsed)) { setDraft(String(percent)); return; }
     const next = toScale(parsed);
-    setDraft(String(Math.round(next * 100)));
+    setDraft(String(scaleToPercent(kind, next)));
     onChange(next);
   };
 
@@ -59,7 +63,7 @@ function TextSizeRow({ kind, name, title, scale: requestedScale, heightMm, onCha
       <div className="size-field">
         <label>
           <span>{title}</span>
-          <small title={`${minPercent}–${maxPercent}%`}>≈ {printed.pt.toFixed(1)} pt</small>
+          <small title={`${minPercent}–${maxPercent}%`}>{kind === "seal" ? `⌀ ${printed.mm.toFixed(1)} mm` : `≈ ${printed.pt.toFixed(1)} pt`}</small>
         </label>
         <input
           className="size-slider"
@@ -92,7 +96,7 @@ function TextSizeRow({ kind, name, title, scale: requestedScale, heightMm, onCha
         </div>
       </div>
       <div className="text-presets" role="group" aria-label={`${name} quick sizes`}>
-        {PRESETS.filter((preset) => preset <= maxPercent).map((preset) => (
+        {PRESETS.filter((preset) => preset >= minPercent && preset <= maxPercent).map((preset) => (
           <button key={preset} type="button" className={percent === preset ? "is-current" : ""} onClick={() => onChange(toScale(preset))}>{preset}%</button>
         ))}
       </div>
@@ -100,9 +104,12 @@ function TextSizeRow({ kind, name, title, scale: requestedScale, heightMm, onCha
   );
 }
 
-/** Sizes of the model name, selling points and price on every label, each with its printed height in points. */
+/**
+ * Sizes of the model name, selling points, price, sale regular price and SALE seal on every label, each in
+ * percent of the shop's standard size and with its printed size.
+ */
 export function TextSizeControls({ scales, heightMm, onChange }: TextSizeControlsProps) {
-  const allDefault = ROWS.every(({ kind, key }) => clampTextScale(kind, scales[key]) === TEXT_SCALE_LIMITS[kind].default);
+  const allDefault = ROWS.every(({ kind, key }) => scaleToPercent(kind, scales[key]) === 100);
   const resetAll = () => onChange(Object.fromEntries(ROWS.map(({ kind, key }) => [key, TEXT_SCALE_LIMITS[kind].default])));
 
   return (
@@ -110,7 +117,7 @@ export function TextSizeControls({ scales, heightMm, onChange }: TextSizeControl
       <div className="size-panel-head">
         <div>
           <span className="eyebrow">TEXT SIZE</span>
-          <strong>Model · selling points · price</strong>
+          <strong>100% = shop standard</strong>
         </div>
         <button className="size-reset" type="button" disabled={allDefault} onClick={resetAll}>
           <RotateCcw size={13} /> Reset all to 100%
@@ -120,8 +127,8 @@ export function TextSizeControls({ scales, heightMm, onChange }: TextSizeControl
         <TextSizeRow key={key} kind={kind} name={name} title={title} scale={scales[key]} heightMm={heightMm} onChange={(scale) => onChange({ [key]: scale })} />
       ))}
       <p className="size-note">
-        Applies to every label; pt is the printed height on a {heightMm} mm tall label. Text too long for its space shrinks to fit, so short model names and phrases print largest.
-        Limits: model {Math.round(TEXT_SCALE_LIMITS.model.max * 100)}%, selling points {Math.round(TEXT_SCALE_LIMITS.feature.max * 100)}%, price {Math.round(TEXT_SCALE_LIMITS.price.max * 100)}%.
+        Applies to every label; sizes print as shown on a {heightMm} mm tall label. Text too long for its space shrinks to fit, so short model names and phrases print largest.
+        Reg. price and the seal only appear on sale labels.
       </p>
     </section>
   );

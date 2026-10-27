@@ -16,23 +16,36 @@ export const LABEL_SIZE_LIMITS = {
 } as const;
 
 /**
- * How large each text on the label is drawn, relative to the approved design (1 = approved, 1.5 = half
- * as large again). It is a wish, not a guarantee: text too long for its space still shrinks to fit,
- * but never below what the approved design would have used for it. The model name and price have less
- * room around them than the selling points, so they can grow less.
+ * How large each part of the label is drawn, stored relative to the approved design (1 = approved, 1.5 =
+ * half as large again). The controls show it relative to the shop's standard size instead, the `default`
+ * below, which reads as 100%: the approved design printed too small for the shop wall. A size is a wish,
+ * not a guarantee: text too long for its space still shrinks to fit, but never below what the approved
+ * design would have used for it. Each range is what still fits its space on the label.
  */
+const limitsAround = (standard: number, minPercent: number, maxPercent: number) => ({
+  default: standard,
+  min: Math.round(standard * minPercent) / 100,
+  max: Math.round(standard * maxPercent) / 100,
+  minPercent,
+  maxPercent
+});
+
 export const TEXT_SCALE_LIMITS = {
-  model: { min: 0.8, max: 1.4, default: 1 },
-  feature: { min: 0.8, max: 1.7, default: 1 },
-  price: { min: 0.8, max: 1.25, default: 1 }
+  model: limitsAround(1.3, 60, 130),
+  feature: limitsAround(1.5, 60, 130),
+  price: limitsAround(1.2, 70, 115),
+  /** The struck-through "REG." price on sale labels. */
+  regular: limitsAround(1.5, 65, 130),
+  /** The round SALE seal. */
+  seal: limitsAround(1, 80, 120)
 } as const;
 
 export type TextKind = keyof typeof TEXT_SCALE_LIMITS;
 
 export const FEATURE_TEXT_SCALE = TEXT_SCALE_LIMITS.feature;
 
-/** Height of each text at the approved size, in the label's 230-unit-tall design units. */
-const APPROVED_TEXT_UNITS: Record<TextKind, number> = { model: 58, feature: 21, price: 88 };
+/** Height of each text at the approved size, in the label's 230-unit-tall design units (the seal: its diameter). */
+const APPROVED_TEXT_UNITS: Record<TextKind, number> = { model: 58, feature: 21, price: 88, regular: 18, seal: 144 };
 
 export function clampTextScale(kind: TextKind, value: unknown): number {
   const limits = TEXT_SCALE_LIMITS[kind];
@@ -43,7 +56,15 @@ export function clampTextScale(kind: TextKind, value: unknown): number {
 
 export const clampFeatureScale = (value: unknown): number => clampTextScale("feature", value);
 
-/** Print size of a text at its approved size (e.g. 21 design units for a selling point) at a given scale and label height. */
+/** A stored scale as the controls show it: percent of the shop's standard size. */
+export const scaleToPercent = (kind: TextKind, scale: number): number =>
+  Math.round((clampTextScale(kind, scale) / TEXT_SCALE_LIMITS[kind].default) * 100);
+
+/** A percent of the shop's standard size as a stored scale, within range. */
+export const percentToScale = (kind: TextKind, percent: number): number =>
+  clampTextScale(kind, (TEXT_SCALE_LIMITS[kind].default * percent) / 100);
+
+/** Print size of a text at a given scale and label height. */
 export function textPrintSize(kind: TextKind, scale: number, heightMm: number): { mm: number; pt: number } {
   const mm = (APPROVED_TEXT_UNITS[kind] * scale * heightMm) / 230;
   return { mm, pt: mm / 0.352778 };

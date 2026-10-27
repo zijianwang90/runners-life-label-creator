@@ -49,21 +49,22 @@ describe("label backup normalization", () => {
     expect(data.settings).not.toHaveProperty("useSystemDialog");
   });
 
-  it("defaults the selling point text to the approved size and keeps a saved choice within range", () => {
-    expect(createDefaultData().settings.featureTextScale).toBe(1);
-    expect(normalizeAppData({ shoes: [] }).settings.featureTextScale).toBe(1);
+  it("defaults the selling point text to the shop standard and keeps a saved choice within range", () => {
+    expect(createDefaultData().settings.featureTextScale).toBe(1.5);
+    expect(normalizeAppData({ shoes: [] }).settings.featureTextScale).toBe(1.5);
     expect(normalizeAppData({ shoes: [], settings: { featureTextScale: 1.4 } }).settings.featureTextScale).toBe(1.4);
-    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: 9 } }).settings.featureTextScale).toBe(1.7);
-    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: "huge" } }).settings.featureTextScale).toBe(1);
+    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: 9 } }).settings.featureTextScale).toBe(1.95);
+    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: "huge" } }).settings.featureTextScale).toBe(1.5);
   });
 
-  it("defaults the model name and price to the approved size, including for data saved before they could change", () => {
+  it("defaults every size to the shop standard, including for data saved before it could change", () => {
     const fresh = createDefaultData().settings;
-    expect([fresh.modelTextScale, fresh.priceTextScale]).toEqual([1, 1]);
+    expect([fresh.modelTextScale, fresh.featureTextScale, fresh.priceTextScale, fresh.regularPriceTextScale, fresh.saleSealScale]).toEqual([1.3, 1.5, 1.2, 1.5, 1]);
     const old = normalizeAppData({ shoes: [], settings: { featureTextScale: 1.4 } }).settings;
-    expect([old.modelTextScale, old.featureTextScale, old.priceTextScale]).toEqual([1, 1.4, 1]);
-    const saved = normalizeAppData({ shoes: [], settings: { modelTextScale: 1.3, priceTextScale: 9 } }).settings;
-    expect([saved.modelTextScale, saved.priceTextScale]).toEqual([1.3, 1.25]);
+    expect([old.modelTextScale, old.featureTextScale, old.priceTextScale, old.regularPriceTextScale, old.saleSealScale]).toEqual([1.3, 1.4, 1.2, 1.5, 1]);
+    // Sizes saved by v1.1.1 keep printing exactly as before.
+    const saved = normalizeAppData({ shoes: [], settings: { modelTextScale: 1.3, priceTextScale: 9, saleSealScale: 0.1 } }).settings;
+    expect([saved.modelTextScale, saved.priceTextScale, saved.saleSealScale]).toEqual([1.3, 1.38, 0.8]);
   });
 
   it("rejects files without a shoe list", () => {

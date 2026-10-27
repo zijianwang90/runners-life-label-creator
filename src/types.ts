@@ -29,8 +29,8 @@ export interface LabelSize {
   heightMm: number;
 }
 
-/** The three text scales, as one label is drawn with them. */
-export type TextScales = Pick<AppSettings, "modelTextScale" | "featureTextScale" | "priceTextScale">;
+/** The size scales one label is drawn with. */
+export type TextScales = Pick<AppSettings, "modelTextScale" | "featureTextScale" | "priceTextScale" | "regularPriceTextScale" | "saleSealScale">;
 
 export interface AppSettings {
   currencySymbol: string;
@@ -42,6 +42,10 @@ export interface AppSettings {
   featureTextScale: number;
   /** Size of the price relative to the approved design (1 = approved). */
   priceTextScale: number;
+  /** Size of the struck-through regular price on sale labels relative to the approved design (1 = approved). */
+  regularPriceTextScale: number;
+  /** Size of the SALE seal relative to the approved design (1 = approved). */
+  saleSealScale: number;
   calibration: CalibrationSettings;
 }
 
@@ -61,6 +65,8 @@ export interface PrintPayload {
   modelTextScale: number;
   featureTextScale: number;
   priceTextScale: number;
+  regularPriceTextScale: number;
+  saleSealScale: number;
   calibration: CalibrationSettings;
 }
 

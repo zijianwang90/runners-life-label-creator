@@ -11,6 +11,8 @@ import {
   formatLabelSize,
   LABEL_SIZE_LIMITS,
   labelSizeRanges,
+  percentToScale,
+  scaleToPercent,
   textPrintSize
 } from "./labelSize";
 
@@ -105,16 +107,16 @@ describe("editing one dimension", () => {
 });
 
 describe("selling point text scale", () => {
-  it("keeps the approved size by default and clamps to 80–170%", () => {
-    expect(FEATURE_TEXT_SCALE.default).toBe(1);
+  it("defaults to the shop standard (150% of the approved design) and clamps to 60–130% of it", () => {
+    expect(FEATURE_TEXT_SCALE.default).toBe(1.5);
     expect(clampFeatureScale(1)).toBe(1);
     expect(clampFeatureScale(1.35)).toBe(1.35);
-    expect(clampFeatureScale(5)).toBe(1.7);
-    expect(clampFeatureScale(0.2)).toBe(0.8);
+    expect(clampFeatureScale(5)).toBe(1.95);
+    expect(clampFeatureScale(0.2)).toBe(0.9);
   });
 
-  it("falls back to the approved size for anything that is not a usable number", () => {
-    for (const bad of [undefined, null, "big", NaN, 0, -1, Infinity]) expect(clampFeatureScale(bad)).toBe(1);
+  it("falls back to the shop standard for anything that is not a usable number", () => {
+    for (const bad of [undefined, null, "big", NaN, 0, -1, Infinity]) expect(clampFeatureScale(bad)).toBe(1.5);
   });
 
   it("converts the scale to the size the text prints at", () => {
@@ -130,10 +132,22 @@ describe("selling point text scale", () => {
 describe("model name and price text scale", () => {
   it("clamps each to its own range", () => {
     expect(clampTextScale("model", 1.2)).toBe(1.2);
-    expect(clampTextScale("model", 3)).toBe(1.4);
-    expect(clampTextScale("price", 3)).toBe(1.25);
-    expect(clampTextScale("price", 0.1)).toBe(0.8);
-    expect(clampTextScale("price", "big")).toBe(1);
+    expect(clampTextScale("model", 3)).toBe(1.69);
+    expect(clampTextScale("price", 3)).toBe(1.38);
+    expect(clampTextScale("price", 0.1)).toBe(0.84);
+    expect(clampTextScale("price", "big")).toBe(1.2);
+    expect(clampTextScale("regular", 9)).toBe(1.95);
+    expect(clampTextScale("seal", 9)).toBe(1.2);
+  });
+
+  it("shows sizes as a percent of the shop standard", () => {
+    // The sizes the shop settled on in v1.1.1 read as 100%.
+    expect([scaleToPercent("model", 1.3), scaleToPercent("feature", 1.5), scaleToPercent("price", 1.2)]).toEqual([100, 100, 100]);
+    expect([scaleToPercent("model", 1), scaleToPercent("feature", 1)]).toEqual([77, 67]);
+    expect(percentToScale("feature", 120)).toBe(1.8);
+    expect(percentToScale("model", 95)).toBeCloseTo(1.24, 2);
+    expect(scaleToPercent("model", percentToScale("model", 95))).toBe(95);
+    expect(percentToScale("price", 200)).toBe(1.38);
   });
 
   it("converts each scale to the size it prints at", () => {

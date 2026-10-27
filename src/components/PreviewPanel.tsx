@@ -3,7 +3,7 @@ import type { LabelSize, ShoeLabel, TextScales } from "../types";
 import { getPriceState, validateShoe } from "../utils/labels";
 import { formatLabelSize, formatMm } from "../utils/labelSize";
 import { LabelSizeControls } from "./LabelSizeControls";
-import { LabelSvg } from "./LabelSvg";
+import { LabelSvg, labelScaleProps } from "./LabelSvg";
 import { TextSizeControls } from "./TextSizeControls";
 
 interface PreviewPanelProps {
@@ -35,7 +35,7 @@ export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChang
       </div>
 
       <div className="label-stage">
-        <LabelSvg shoe={shoe} currencySymbol={currencySymbol} size={labelSize} modelScale={textScales.modelTextScale} featureScale={textScales.featureTextScale} priceScale={textScales.priceTextScale} />
+        <LabelSvg shoe={shoe} currencySymbol={currencySymbol} size={labelSize} {...labelScaleProps(textScales)} />
       </div>
       <div className="dimension-line"><span>{formatMm(labelSize.widthMm)} mm</span></div>
 

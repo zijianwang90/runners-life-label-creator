@@ -9,6 +9,8 @@ export const defaultSettings: AppSettings = {
   modelTextScale: TEXT_SCALE_LIMITS.model.default,
   featureTextScale: TEXT_SCALE_LIMITS.feature.default,
   priceTextScale: TEXT_SCALE_LIMITS.price.default,
+  regularPriceTextScale: TEXT_SCALE_LIMITS.regular.default,
+  saleSealScale: TEXT_SCALE_LIMITS.seal.default,
   calibration: {
     scaleX: 1,
     scaleY: 1,
@@ -86,6 +88,8 @@ export function normalizeAppData(input: unknown): AppData {
       modelTextScale: clampTextScale("model", rawSettings.modelTextScale),
       featureTextScale: clampTextScale("feature", rawSettings.featureTextScale),
       priceTextScale: clampTextScale("price", rawSettings.priceTextScale),
+      regularPriceTextScale: clampTextScale("regular", rawSettings.regularPriceTextScale),
+      saleSealScale: clampTextScale("seal", rawSettings.saleSealScale),
       calibration: {
         scaleX: Math.min(1.05, Math.max(0.95, Number(calibration.scaleX) || 1)),
         scaleY: Math.min(1.05, Math.max(0.95, Number(calibration.scaleY) || 1)),
