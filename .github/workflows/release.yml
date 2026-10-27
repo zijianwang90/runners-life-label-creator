@@ -1,31 +1,80 @@
 name: Release
 
-# Push a tag such as v1.2.0 (see "Publishing a release" in the README). The Windows and macOS
-# builds are attached to a GitHub release; installed copies of the app find it from there.
+# Everything happens on GitHub, nothing on a local computer. Start it from the Actions tab
+# (Release > Run workflow) or with:  gh workflow run release.yml -f bump=minor
+#
+# It works out the next version, builds Windows and macOS from main, and only when the Windows
+# build has succeeded commits the version bump to main, tags it and publishes the GitHub release
+# that installed copies of the app update from. A failed build leaves no commit and no tag behind.
 on:
-  push:
-    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      prerelease:
+        description: Publish as a pre-release (the app's updater ignores pre-releases, so use this to test first)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      sha: ${{ steps.next.outputs.sha }}
+    steps:
+      - name: Only release from main
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Run this workflow on the main branch, not $GITHUB_REF_NAME."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Work out the next version
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          version="$(npm version "$BUMP" --no-git-tag-version | sed 's/^v//')"
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "::error::Tag v$version already exists."
+            exit 1
+          fi
+          echo "Releasing v$version from $(git rev-parse --short HEAD)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   windows:
+    needs: version
     runs-on: windows-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Tag must match the version in package.json
+      - name: Set the release version
         shell: bash
-        run: |
-          expected="v$(node -p "require('./package.json').version")"
-          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($expected). Use npm version to bump and tag together."
-            exit 1
-          fi
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
       - run: npm ci
       - run: npm test
       - run: npm run package:win
@@ -46,13 +95,20 @@ jobs:
             release/windows/Runners-Life-Label-Creator-Portable-*.zip
 
   macos:
+    needs: version
     runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - name: Set the release version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
       - run: npm ci
       - run: npm run package:mac
         env:
@@ -66,14 +122,32 @@ jobs:
             release/mac/*.zip
 
   publish:
-    needs: [windows, macos]
+    needs: [version, windows, macos]
     # A macOS problem must not hold back the Windows release the shop computers wait for.
     if: ${{ !cancelled() && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Commit the version bump to main
+        id: bump
+        # Pushes the commit the builds were made from plus the version bump. If main has moved on in the
+        # meantime the push is rejected and nothing is published; run the workflow again.
+        run: |
+          npm version "$VERSION" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release v$VERSION"
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: assets
@@ -82,4 +156,10 @@ jobs:
         working-directory: assets
         run: sha256sum * > ../SHA256SUMS.txt && mv ../SHA256SUMS.txt .
       - name: Create the release
-        run: gh release create "$GITHUB_REF_NAME" assets/* --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          PRERELEASE: ${{ inputs.prerelease }}
+          TARGET: ${{ steps.bump.outputs.sha }}
+        run: |
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "v$VERSION" assets/* --target "$TARGET" --title "v$VERSION" --generate-notes "${flags[@]}"

@@ -79,14 +79,17 @@ The repository the app reads is set by `UPDATE_REPO` in [electron/updater.ts](el
 
 ## Publishing a release
 
-```bash
-npm version minor      # or patch / major: bumps package.json, commits and tags vX.Y.Z
-git push --follow-tags
-```
+Releases are made on GitHub, so no local computer is involved. Open the repository's **Actions** tab, choose **Release**, press **Run workflow**, pick `patch`, `minor` or `major` and run it (or use `gh workflow run release.yml -f bump=minor` from any computer with the GitHub CLI).
 
-The tag starts the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)). It runs the tests, builds the Windows installer, portable exe and portable zip plus the macOS dmg and zip, writes `SHA256SUMS.txt` and publishes a GitHub release with generated notes. The notes show up in the app's update dialog and can be edited on GitHub afterwards. Computers running the app pick the release up on their next check.
+The workflow ([.github/workflows/release.yml](.github/workflows/release.yml)):
 
-A release marked *draft* or *pre-release* is ignored by the updater, which makes it a safe way to publish something for testing first. The workflow refuses a tag that does not match the version in `package.json`.
+1. works out the next version from `package.json` (it must be started on `main`);
+2. runs the tests and builds the Windows installer, portable exe and portable zip, plus the macOS dmg and zip;
+3. only if the Windows build succeeded, commits `Release vX.Y.Z` (the version bump) to `main`, tags it, writes `SHA256SUMS.txt` and publishes a GitHub release with generated notes.
+
+A failed build leaves no commit and no tag behind, so it can simply be run again. If `main` receives another commit while the builds run, the push is rejected and nothing is published; run it again. The notes show up in the app's update dialog and can be edited on GitHub afterwards. Computers running the app pick the release up on their next check.
+
+Tick **Publish as a pre-release** to try a release first: the updater ignores pre-releases, so no shop computer will pick it up. If `main` is ever protected by a branch rule, allow GitHub Actions to push to it, or the version commit is rejected.
 
 ## Printing setup
 
