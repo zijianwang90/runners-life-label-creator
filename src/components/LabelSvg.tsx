@@ -4,7 +4,7 @@ import { brandLogos, runnersLifeLogo } from "../assets";
 import type { LabelSize, ShoeLabel } from "../types";
 import { featureFontSize, formatMoney, getPriceState, modelFontSize, moneyParts, savingsAmount } from "../utils/labels";
 import { BASE_DESIGN_WIDTH, computeLabelLayout, DESIGN_HEIGHT, designWidth, fitText } from "../utils/labelLayout";
-import { clampFeatureScale, DEFAULT_LABEL_SIZE } from "../utils/labelSize";
+import { clampTextScale, DEFAULT_LABEL_SIZE } from "../utils/labelSize";
 
 const LABEL_FONT = '"Barlow Condensed", "Arial Narrow", "Segoe UI", Arial, sans-serif';
 
@@ -47,8 +47,12 @@ interface LabelSvgProps {
   currencySymbol?: string;
   /** Physical label size; only its aspect ratio changes the layout, the rest is plain scaling. */
   size?: LabelSize;
+  /** Size of the model name relative to the approved design; 1 draws exactly the approved label. */
+  modelScale?: number;
   /** Size of the selling points relative to the approved design; 1 draws exactly the approved label. */
   featureScale?: number;
+  /** Size of the price relative to the approved design; 1 draws exactly the approved label. */
+  priceScale?: number;
   className?: string;
   title?: string;
 }
@@ -56,7 +60,7 @@ interface LabelSvgProps {
 const round = (value: number) => Math.round(value * 1000) / 1000;
 const PRICE_POLYGON = [[1730, 0], [2200, 0], [2200, 230], [1668, 230]] as const;
 
-export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, featureScale = 1, className = "", title }: LabelSvgProps) {
+export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, modelScale = 1, featureScale = 1, priceScale = 1, className = "", title }: LabelSvgProps) {
   const rawId = useId().replace(/:/g, "");
   const speedPatternId = `speed-${rawId}`;
   const runnerClipId = `runner-${rawId}`;
@@ -66,17 +70,21 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const displayedPrice = priceState === "sale" ? shoe.salePrice : shoe.regularPrice;
   const features = shoe.features.map((feature) => feature.trim()).filter(Boolean).slice(0, 3);
   const layout = computeLabelLayout(designWidth(size), features.length);
-  const textScale = clampFeatureScale(featureScale);
+  const textScale = clampTextScale("feature", featureScale);
+  const modelTextScale = clampTextScale("model", modelScale);
+  const priceTextScale = clampTextScale("price", priceScale);
+  const priceSize = (approved: number) => round(approved * priceTextScale);
   // The divider between selling points grows with their text: 140–170 at the approved 21-unit size.
   const separatorTop = round(162 - 22 * textScale);
   const separatorBottom = round(162 + 8 * textScale);
   const canvasWidth = round(layout.width);
   const modelText = (shoe.model || "SHOE MODEL").toUpperCase();
   const modelFit = fitText(modelText, {
-    baseSize: modelFontSize(shoe.model),
+    baseSize: round(modelFontSize(shoe.model) * modelTextScale),
     maxWidth: layout.model.maxWidth,
     weight: 800,
-    letterSpacing: designTokens.typography.model.letterSpacing
+    letterSpacing: designTokens.typography.model.letterSpacing,
+    minRatio: Math.min(0.8, 0.8 / modelTextScale)
   });
 
   const brandConfig = designTokens.brandLogos.brands[shoe.brand];
@@ -249,9 +257,9 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
               currencySymbol={currencySymbol}
               x={1980}
               y={137}
-              integerSize={82}
-              currencySize={34}
-              centsSize={46}
+              integerSize={priceSize(82)}
+              currencySize={priceSize(34)}
+              centsSize={priceSize(46)}
             />
             <rect x="1867" y="158" width="226" height="40" fill="#fff" />
             <text
@@ -274,9 +282,9 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
             currencySymbol={currencySymbol}
             x={1950}
             y={157}
-            integerSize={88}
-            currencySize={36}
-            centsSize={50}
+            integerSize={priceSize(88)}
+            currencySize={priceSize(36)}
+            centsSize={priceSize(50)}
           />
         )}
       </g>

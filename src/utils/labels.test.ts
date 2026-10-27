@@ -8,6 +8,8 @@ import {
   moneyParts,
   modelFontSize,
   paginate,
+  salePercentOf,
+  salePriceFromPercent,
   savingsAmount,
   validateShoe
 } from "./labels";
@@ -39,6 +41,18 @@ describe("price helpers", () => {
     expect(moneyParts(12)).toEqual({ whole: "12", cents: ".00" });
     expect(moneyParts(null)).toEqual({ whole: "—", cents: "" });
     expect(savingsAmount(shoe())).toBeCloseTo(40);
+  });
+
+  it("converts between a sale percent and a sale price", () => {
+    expect(salePriceFromPercent(229.99, 20)).toBe(183.99);
+    expect(salePriceFromPercent(200, 25)).toBe(150);
+    expect(salePriceFromPercent(199.95, 15)).toBe(169.96);
+    expect(salePercentOf(200, 150)).toBe(25);
+    expect(salePercentOf(229.99, 189.99)).toBe(17.4);
+    expect(salePercentOf(229.99, salePriceFromPercent(229.99, 20))).toBe(20);
+    expect(salePercentOf(null, 150)).toBeNull();
+    expect(salePercentOf(200, null)).toBeNull();
+    expect(salePercentOf(0, 150)).toBeNull();
   });
 });
 

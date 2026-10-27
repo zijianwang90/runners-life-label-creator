@@ -58,7 +58,7 @@ export function PrintDialog(props: PrintDialogProps) {
             <div className="print-cart-list">
               {props.shoes.map((shoe) => (
                 <article className="print-cart-item" key={shoe.id}>
-                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} featureScale={props.settings.featureTextScale} /></div>
+                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} modelScale={props.settings.modelTextScale} featureScale={props.settings.featureTextScale} priceScale={props.settings.priceTextScale} /></div>
                   <div className="cart-item-controls">
                     <span>Copies</span>
                     <div className="quantity-stepper">
@@ -86,7 +86,7 @@ export function PrintDialog(props: PrintDialogProps) {
             </label>
           </fieldset>
 
-          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Opens as a PDF, then you print</strong><small>The labels open in your default PDF viewer. Choose your printer there and print at 100% / Actual size (not “Fit to page”).</small></span></div>
+          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Saves a PDF, then you print</strong><small>The PDF is shown selected in its folder. Drag it into Chrome, choose your printer and print at 100% / Actual size (not “Fit to page”).</small></span></div>
 
           <details className="calibration-box">
             <summary><Ruler size={17} /> Printer calibration</summary>
@@ -107,7 +107,7 @@ export function PrintDialog(props: PrintDialogProps) {
         <footer className="modal-footer">
           <button className="secondary-button" onClick={props.onClose}>Cancel</button>
           <button className="primary-button" onClick={props.onPrint} disabled={props.printing || copies === 0}>
-            <Printer size={17} /> {props.printing ? "Creating PDF…" : "Open PDF to print"}
+            <Printer size={17} /> {props.printing ? "Creating PDF…" : "Create PDF to print"}
           </button>
         </footer>
       </section>

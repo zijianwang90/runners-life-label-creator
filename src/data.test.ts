@@ -57,6 +57,15 @@ describe("label backup normalization", () => {
     expect(normalizeAppData({ shoes: [], settings: { featureTextScale: "huge" } }).settings.featureTextScale).toBe(1);
   });
 
+  it("defaults the model name and price to the approved size, including for data saved before they could change", () => {
+    const fresh = createDefaultData().settings;
+    expect([fresh.modelTextScale, fresh.priceTextScale]).toEqual([1, 1]);
+    const old = normalizeAppData({ shoes: [], settings: { featureTextScale: 1.4 } }).settings;
+    expect([old.modelTextScale, old.featureTextScale, old.priceTextScale]).toEqual([1, 1.4, 1]);
+    const saved = normalizeAppData({ shoes: [], settings: { modelTextScale: 1.3, priceTextScale: 9 } }).settings;
+    expect([saved.modelTextScale, saved.priceTextScale]).toEqual([1.3, 1.25]);
+  });
+
   it("rejects files without a shoe list", () => {
     expect(() => normalizeAppData({})).toThrow(/shoe list/);
   });

@@ -16,23 +16,40 @@ export const LABEL_SIZE_LIMITS = {
 } as const;
 
 /**
- * How large the three selling points are drawn, relative to the approved design (1 = approved, 1.5 = half
- * as large again). It is a wish, not a guarantee: a phrase too long for its slot still shrinks to fit,
- * but never below what the approved design would have used for it.
+ * How large each text on the label is drawn, relative to the approved design (1 = approved, 1.5 = half
+ * as large again). It is a wish, not a guarantee: text too long for its space still shrinks to fit,
+ * but never below what the approved design would have used for it. The model name and price have less
+ * room around them than the selling points, so they can grow less.
  */
-export const FEATURE_TEXT_SCALE = { min: 0.8, max: 1.7, default: 1 } as const;
+export const TEXT_SCALE_LIMITS = {
+  model: { min: 0.8, max: 1.4, default: 1 },
+  feature: { min: 0.8, max: 1.7, default: 1 },
+  price: { min: 0.8, max: 1.25, default: 1 }
+} as const;
 
-export function clampFeatureScale(value: unknown): number {
+export type TextKind = keyof typeof TEXT_SCALE_LIMITS;
+
+export const FEATURE_TEXT_SCALE = TEXT_SCALE_LIMITS.feature;
+
+/** Height of each text at the approved size, in the label's 230-unit-tall design units. */
+const APPROVED_TEXT_UNITS: Record<TextKind, number> = { model: 58, feature: 21, price: 88 };
+
+export function clampTextScale(kind: TextKind, value: unknown): number {
+  const limits = TEXT_SCALE_LIMITS[kind];
   const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return FEATURE_TEXT_SCALE.default;
-  return Math.round(Math.min(FEATURE_TEXT_SCALE.max, Math.max(FEATURE_TEXT_SCALE.min, parsed)) * 100) / 100;
+  if (!Number.isFinite(parsed) || parsed <= 0) return limits.default;
+  return Math.round(Math.min(limits.max, Math.max(limits.min, parsed)) * 100) / 100;
 }
 
-/** Print size of the approved selling-point text (21 design units tall) at a given scale and label height. */
-export function featureTextPrintSize(scale: number, heightMm: number): { mm: number; pt: number } {
-  const mm = (21 * scale * heightMm) / 230;
+export const clampFeatureScale = (value: unknown): number => clampTextScale("feature", value);
+
+/** Print size of a text at its approved size (e.g. 21 design units for a selling point) at a given scale and label height. */
+export function textPrintSize(kind: TextKind, scale: number, heightMm: number): { mm: number; pt: number } {
+  const mm = (APPROVED_TEXT_UNITS[kind] * scale * heightMm) / 230;
   return { mm, pt: mm / 0.352778 };
 }
+
+export const featureTextPrintSize = (scale: number, heightMm: number) => textPrintSize("feature", scale, heightMm);
 
 export const A4_LANDSCAPE = { widthMm: 297, heightMm: 210, marginYmm: 13 } as const;
 

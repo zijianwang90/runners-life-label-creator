@@ -29,12 +29,19 @@ export interface LabelSize {
   heightMm: number;
 }
 
+/** The three text scales, as one label is drawn with them. */
+export type TextScales = Pick<AppSettings, "modelTextScale" | "featureTextScale" | "priceTextScale">;
+
 export interface AppSettings {
   currencySymbol: string;
   printMode: PrintMode;
   labelSize: LabelSize;
+  /** Size of the model name relative to the approved design (1 = approved). */
+  modelTextScale: number;
   /** Size of the three selling points relative to the approved design (1 = approved). */
   featureTextScale: number;
+  /** Size of the price relative to the approved design (1 = approved). */
+  priceTextScale: number;
   calibration: CalibrationSettings;
 }
 
@@ -51,14 +58,16 @@ export interface PrintPayload {
   mode: PrintMode;
   currencySymbol: string;
   labelSize: LabelSize;
+  modelTextScale: number;
   featureTextScale: number;
+  priceTextScale: number;
   calibration: CalibrationSettings;
 }
 
 export interface PrintResult {
   success: boolean;
   reason?: string;
-  /** The PDF that was written and opened in the system's default PDF viewer. */
+  /** The PDF that was written; it is shown selected in File Explorer / Finder. */
   outputPath?: string;
 }
 
@@ -99,7 +108,7 @@ export interface UpdateState {
 export interface ElectronAPI {
   loadData: () => Promise<AppData | null>;
   saveData: (data: AppData) => Promise<void>;
-  /** Renders the labels to a PDF and opens it in the system's default PDF viewer; printing is done from there. */
+  /** Renders the labels to a PDF and shows it in File Explorer / Finder; it is printed from a browser or PDF viewer. */
   print: (payload: PrintPayload) => Promise<PrintResult>;
   onPrintPayload: (callback: (jobId: string, payload: PrintPayload) => void) => () => void;
   notifyPrintReady: (jobId: string) => void;

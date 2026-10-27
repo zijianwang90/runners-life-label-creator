@@ -105,7 +105,7 @@ function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
   };
 }
 
-// The PDFs the app opens for printing live in the system temp folder; old ones are swept away on the next print.
+// The PDFs the app creates for printing live in the system temp folder; old ones are swept away on the next print.
 const pdfFolder = () => path.join(app.getPath("temp"), "runners-life-label-creator");
 const PDF_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -167,13 +167,9 @@ async function runPrint(payload: PrintPayload): Promise<PrintResult> {
         await fs.mkdir(pdfFolder(), { recursive: true });
         const filePath = path.join(pdfFolder(), pdfFileName(payload));
         await fs.writeFile(filePath, pdf);
-        // openPath resolves to an error message, or an empty string once the default PDF viewer has been launched.
-        const openError = await shell.openPath(filePath);
-        if (openError) {
-          shell.showItemInFolder(filePath);
-          finish({ success: false, reason: `The PDF was created but could not be opened (${openError}). It is in ${pdfFolder()}.` });
-          return;
-        }
+        // Show the file selected in Explorer / Finder rather than opening it: on the shop computer the default
+        // viewer (Acrobat) is too slow to use, so the PDF is dragged into Chrome and printed from there.
+        shell.showItemInFolder(filePath);
         finish({ success: true, outputPath: filePath });
       } catch (error) {
         finish({ success: false, reason: error instanceof Error ? error.message : "Unable to create the PDF." });

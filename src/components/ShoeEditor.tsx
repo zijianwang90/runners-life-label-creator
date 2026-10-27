@@ -1,7 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Trash2 } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
 import { BRAND_IDS, type ShoeLabel } from "../types";
-import { getPriceState, validateShoe } from "../utils/labels";
+import { getPriceState, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
 
 interface ShoeEditorProps {
   shoe: ShoeLabel;
@@ -23,6 +24,58 @@ const numericValue = (value: string): number | null => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
+interface SalePercentFieldProps {
+  regularPrice: number | null;
+  salePrice: number | null;
+  onSalePriceChange: (salePrice: number | null) => void;
+}
+
+/**
+ * Discount off the regular price. Typing a percent sets the sale price; typing a sale price updates the
+ * percent. Only the sale price is stored, so the percent follows it when either price changes later.
+ */
+function SalePercentField({ regularPrice, salePrice, onSalePriceChange }: SalePercentFieldProps) {
+  const percent = salePercentOf(regularPrice, salePrice);
+  const shown = percent === null ? "" : String(percent);
+  const [draft, setDraft] = useState(shown);
+  const editing = useRef(false);
+  const hasRegular = regularPrice !== null && regularPrice > 0;
+
+  useEffect(() => {
+    if (!editing.current) setDraft(shown);
+  }, [shown]);
+
+  const parsed = numericValue(draft);
+  const error = editing.current && parsed !== null && (parsed <= 0 || parsed >= 100) ? "Use 1–99%." : null;
+
+  return (
+    <label className={`field percent-field ${error ? "has-error" : ""}`}>
+      <span>Sale %</span>
+      <input
+        type="number"
+        min="1"
+        max="99"
+        step="1"
+        value={draft}
+        disabled={!hasRegular}
+        placeholder={hasRegular ? "20" : "—"}
+        title={hasRegular ? "Percent off the regular price; sets the sale price" : "Enter the regular price first"}
+        onFocus={() => { editing.current = true; }}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          const value = numericValue(event.target.value);
+          if (!hasRegular) return;
+          if (value === null) onSalePriceChange(null);
+          else if (value > 0 && value < 100) onSalePriceChange(salePriceFromPercent(regularPrice, value));
+        }}
+        onBlur={() => { editing.current = false; setDraft(shown); }}
+        onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+      />
+      {error && <small>{error}</small>}
+    </label>
+  );
+}
 
 export function ShoeEditor(props: ShoeEditorProps) {
   const { shoe } = props;
@@ -91,6 +144,8 @@ export function ShoeEditor(props: ShoeEditorProps) {
             />
             {validation.fields.salePrice && <small>{validation.fields.salePrice}</small>}
           </label>
+
+          <SalePercentField regularPrice={shoe.regularPrice} salePrice={shoe.salePrice} onSalePriceChange={(salePrice) => update({ salePrice })} />
 
         </div>
 

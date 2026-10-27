@@ -4,12 +4,14 @@ import {
   changeLabelSize,
   clampFeatureScale,
   clampLabelSize,
+  clampTextScale,
   DEFAULT_LABEL_SIZE,
   FEATURE_TEXT_SCALE,
   featureTextPrintSize,
   formatLabelSize,
   LABEL_SIZE_LIMITS,
-  labelSizeRanges
+  labelSizeRanges,
+  textPrintSize
 } from "./labelSize";
 
 const aspect = (size: { widthMm: number; heightMm: number }) => size.widthMm / size.heightMm;
@@ -122,6 +124,23 @@ describe("selling point text scale", () => {
     expect(featureTextPrintSize(1.5, 23).pt).toBeCloseTo(8.93, 1);
     // A taller label prints the same scale larger.
     expect(featureTextPrintSize(1, 30).mm).toBeCloseTo(2.74, 2);
+  });
+});
+
+describe("model name and price text scale", () => {
+  it("clamps each to its own range", () => {
+    expect(clampTextScale("model", 1.2)).toBe(1.2);
+    expect(clampTextScale("model", 3)).toBe(1.4);
+    expect(clampTextScale("price", 3)).toBe(1.25);
+    expect(clampTextScale("price", 0.1)).toBe(0.8);
+    expect(clampTextScale("price", "big")).toBe(1);
+  });
+
+  it("converts each scale to the size it prints at", () => {
+    // The approved model name is 58 units, the price 88 units, of a 230-unit-tall label.
+    expect(textPrintSize("model", 1, 23).mm).toBeCloseTo(5.8, 5);
+    expect(textPrintSize("price", 1, 23).mm).toBeCloseTo(8.8, 5);
+    expect(textPrintSize("price", 1.25, 23).mm).toBeCloseTo(11, 5);
   });
 });
 

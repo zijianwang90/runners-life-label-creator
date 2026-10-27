@@ -35,6 +35,17 @@ export function savingsAmount(shoe: ShoeLabel): number {
   return Math.max(0, shoe.regularPrice - shoe.salePrice);
 }
 
+/** Discount of the sale price off the regular price, in percent with at most one decimal; null without both prices. */
+export function salePercentOf(regularPrice: number | null, salePrice: number | null): number | null {
+  if (regularPrice === null || salePrice === null || !(regularPrice > 0) || !Number.isFinite(salePrice)) return null;
+  return Math.round((1 - salePrice / regularPrice) * 1000) / 10;
+}
+
+/** The sale price for a discount in percent off the regular price, rounded to the cent. */
+export function salePriceFromPercent(regularPrice: number, percent: number): number {
+  return Math.round(regularPrice * (100 - percent)) / 100;
+}
+
 export function validateShoe(shoe: ShoeLabel): ShoeValidation {
   const errors: string[] = [];
   const fields: ShoeValidation["fields"] = {};

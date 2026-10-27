@@ -23,7 +23,9 @@ function renderJob(patch: Partial<PrintPayload>) {
     mode: "a4",
     currencySymbol: "$",
     labelSize: { ...defaultSettings.labelSize },
+    modelTextScale: defaultSettings.modelTextScale,
     featureTextScale: defaultSettings.featureTextScale,
+    priceTextScale: defaultSettings.priceTextScale,
     calibration: defaultSettings.calibration,
     ...patch
   };
@@ -80,6 +82,13 @@ describe("print document at other label sizes", () => {
     expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
     cleanup();
     expect(featureSizes(renderJob({ mode: "a4", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
+  });
+
+  it("prints the model name and price at the chosen size", () => {
+    const { container } = renderJob({ mode: "custom", labels: [shoe("a")], modelTextScale: 1.2, priceTextScale: 1.1 });
+    const model = [...container.querySelectorAll("svg.label-svg text")].find((text) => text.textContent === "MODEL A")!;
+    expect(Number(model.getAttribute("font-size"))).toBeCloseTo(69.6, 5);
+    expect([...container.querySelectorAll("svg.label-svg tspan")].map((tspan) => Number(tspan.getAttribute("font-size")))).toEqual([39.6, 96.8, 55]);
   });
 
   it("names the label size on the calibration sheet", () => {

@@ -10,9 +10,10 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
 - Everything is saved automatically on this computer; there is nothing to import or export.
 - **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6.5:1–10.5:1, the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
-- **Selling point text size**: a separate slider (80–170%, 100% = approved design) makes the three selling points larger for print. It shows the resulting print size in points; phrases too long for their space still shrink to fit, but never below the approved size.
+- **Text size**: separate sliders for the model name (80–140%), the selling points (80–170%) and the price (80–125%), 100% = approved design. Each shows its print size in points; text too long for its space still shrinks to fit, but never below the approved size.
+- **Sale %**: type a discount (e.g. 25) instead of a sale price and the sale price is worked out to the cent; typing a sale price updates the percent.
 - **AI selling points**: tick labels, click `AI selling points`, copy the generated prompt into any AI tool (ChatGPT, Claude, Gemini…), paste its reply back and review it. Each label gets three selling points: shoe type (race / stability / neutral…), heel-to-toe drop, and the midsole foam technology (the brand's official foam name, e.g. PWRRUN PB, never marketing wording). Low-confidence answers are unticked and flagged so specs can be checked before printing.
-- Printing is one click: the app renders the exact A4 or label-size print layout to a PDF and opens it in your default PDF viewer (Edge, Chrome, Acrobat…), where you pick the printer and print yourself. The app never talks to a printer driver, so it works with any printer.
+- Printing is one click: the app renders the exact A4 or label-size print layout to a PDF and shows it selected in File Explorer / Finder (it is not opened, so a slow default viewer such as Acrobat never starts); drag it into Chrome, pick the printer and print yourself. The app never talks to a printer driver, so it works with any printer.
 - Print one 220 × 23 mm label per page, or eight labels on an A4 landscape sheet with crop marks.
 - Per-printer X/Y scale and offset calibration, including a calibration test page.
 
@@ -94,11 +95,11 @@ Tick **Publish as a pre-release** to try a release first: the updater ignores pr
 ## Printing setup
 
 1. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
-2. Click **Open PDF to print**. The PDF opens in the system's default viewer; choose your printer there and print.
+2. Click **Create PDF to print**. The PDF is shown selected in File Explorer / Finder; drag it into Chrome, choose your printer and print.
 3. In the viewer's print dialog, set the scale to 100% / Actual size — not “Fit to page” or “Shrink to fit” — and leave the margins at their defaults.
 4. Open the calibration PDF, print it, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
 
-The PDFs are written to the system temp folder (`runners-life-label-creator`) and removed after about a week. To keep one, use the viewer's *Save as*.
+The PDFs are written to the system temp folder (`runners-life-label-creator`) and removed after about a week. To keep one, copy it out of that folder.
 
 Application data is stored in Electron's Windows user-data folder as `labels.json` and is written atomically.
 

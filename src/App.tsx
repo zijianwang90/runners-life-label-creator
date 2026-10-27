@@ -8,7 +8,7 @@ import { PrintDialog } from "./components/PrintDialog";
 import { SelectionBar } from "./components/SelectionBar";
 import { ShoeEditor } from "./components/ShoeEditor";
 import { UpdateDialog } from "./components/UpdateDialog";
-import type { AppData, AppSettings, BrandId, LabelSize, ShoeLabel, UpdateStatus } from "./types";
+import type { AppData, AppSettings, BrandId, LabelSize, ShoeLabel, TextScales, UpdateStatus } from "./types";
 import { BRAND_IDS } from "./types";
 import { validateShoe } from "./utils/labels";
 import { formatLabelSize } from "./utils/labelSize";
@@ -107,7 +107,7 @@ export default function App() {
   const updateShoes = (nextShoes: ShoeLabel[]) => setData((current) => current ? { ...current, shoes: nextShoes } : current);
   const updateSettings = (settings: AppSettings) => setData((current) => current ? { ...current, settings } : current);
   const updateLabelSize = (labelSize: LabelSize) => setData((current) => current ? { ...current, settings: { ...current.settings, labelSize } } : current);
-  const updateFeatureTextScale = (featureTextScale: number) => setData((current) => current ? { ...current, settings: { ...current.settings, featureTextScale } } : current);
+  const updateTextScales = (scales: Partial<TextScales>) => setData((current) => current ? { ...current, settings: { ...current.settings, ...scales } } : current);
 
   const addShoe = useCallback(() => {
     const shoe = createEmptyShoe();
@@ -200,11 +200,13 @@ export default function App() {
         mode: data.settings.printMode,
         currencySymbol: data.settings.currencySymbol,
         labelSize: data.settings.labelSize,
+        modelTextScale: data.settings.modelTextScale,
         featureTextScale: data.settings.featureTextScale,
+        priceTextScale: data.settings.priceTextScale,
         calibration: data.settings.calibration
       });
       if (result.success) {
-        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} opened as a PDF — print it from the PDF viewer.`, "success");
+        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} saved as a PDF — it is selected in the folder that just opened. Drag it into Chrome to print.`, "success");
         if (kind === "labels") {
           setPrintOpen(false);
           setSelectedIds(new Set());
@@ -282,7 +284,7 @@ export default function App() {
             })}
           </div>
         </section>
-        <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} featureTextScale={data.settings.featureTextScale} onFeatureTextScaleChange={updateFeatureTextScale} />
+        <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} textScales={data.settings} onTextScalesChange={updateTextScales} />
       </main>
 
       <footer className="app-footer"><span>Runners Life Label Creator v{appVersion}{updater.state && <> · <button className="link-button" onClick={openUpdates}>Check for updates</button></>}</span><span>Offline data · {formatLabelSize(data.settings.labelSize)} label · approved Scheme A system</span></footer>

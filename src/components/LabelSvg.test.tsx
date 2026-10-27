@@ -85,6 +85,27 @@ describe("selling point text size", () => {
   });
 });
 
+describe("model name and price text size", () => {
+  const drawScaled = (props: { modelScale?: number; priceScale?: number }, label: ShoeLabel = shoe) =>
+    [...render(<LabelSvg shoe={label} {...props} />).container.querySelectorAll("text")];
+  const modelSize = (texts: Element[]) => Number(texts.find((text) => text.getAttribute("x") === "650")!.getAttribute("font-size"));
+  const priceTspans = (texts: Element[]) => [...texts.flatMap((text) => [...text.querySelectorAll("tspan")])].map((tspan) => Number(tspan.getAttribute("font-size")));
+
+  it("scales the model name", () => {
+    expect(modelSize(drawScaled({ modelScale: 1.4 }))).toBeCloseTo(81.2, 5);
+    cleanup();
+    expect(modelSize(drawScaled({ modelScale: 9 }))).toBeCloseTo(81.2, 5);
+  });
+
+  it("scales every part of the sale and regular price", () => {
+    expect(priceTspans(drawScaled({ priceScale: 1.25 }))).toEqual([42.5, 102.5, 57.5]);
+    cleanup();
+    expect(priceTspans(drawScaled({ priceScale: 1.25 }, { ...shoe, salePrice: null }))).toEqual([45, 110, 62.5]);
+    cleanup();
+    expect(priceTspans(drawScaled({}))).toEqual([34, 82, 46]);
+  });
+});
+
 describe("narrow label", () => {
   const size = { widthMm: 160, heightMm: 23 };
   const q = squeezeFor(230 * size.widthMm / size.heightMm);

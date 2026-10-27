@@ -1,21 +1,21 @@
 import { CheckCircle2, CircleAlert } from "lucide-react";
-import type { LabelSize, ShoeLabel } from "../types";
+import type { LabelSize, ShoeLabel, TextScales } from "../types";
 import { getPriceState, validateShoe } from "../utils/labels";
 import { formatLabelSize, formatMm } from "../utils/labelSize";
-import { FeatureTextControls } from "./FeatureTextControls";
 import { LabelSizeControls } from "./LabelSizeControls";
 import { LabelSvg } from "./LabelSvg";
+import { TextSizeControls } from "./TextSizeControls";
 
 interface PreviewPanelProps {
   shoe: ShoeLabel | null;
   currencySymbol: string;
   labelSize: LabelSize;
   onLabelSizeChange: (size: LabelSize) => void;
-  featureTextScale: number;
-  onFeatureTextScaleChange: (scale: number) => void;
+  textScales: TextScales;
+  onTextScalesChange: (scales: Partial<TextScales>) => void;
 }
 
-export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChange, featureTextScale, onFeatureTextScaleChange }: PreviewPanelProps) {
+export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChange, textScales, onTextScalesChange }: PreviewPanelProps) {
   if (!shoe) {
     return <aside className="preview-panel empty-preview"><p>Select a shoe to preview its printed label.</p></aside>;
   }
@@ -35,12 +35,12 @@ export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChang
       </div>
 
       <div className="label-stage">
-        <LabelSvg shoe={shoe} currencySymbol={currencySymbol} size={labelSize} featureScale={featureTextScale} />
+        <LabelSvg shoe={shoe} currencySymbol={currencySymbol} size={labelSize} modelScale={textScales.modelTextScale} featureScale={textScales.featureTextScale} priceScale={textScales.priceTextScale} />
       </div>
       <div className="dimension-line"><span>{formatMm(labelSize.widthMm)} mm</span></div>
 
       <LabelSizeControls size={labelSize} onChange={onLabelSizeChange} />
-      <FeatureTextControls scale={featureTextScale} heightMm={labelSize.heightMm} onChange={onFeatureTextScaleChange} />
+      <TextSizeControls scales={textScales} heightMm={labelSize.heightMm} onChange={onTextScalesChange} />
 
       <dl className="preview-meta">
         <div><dt>Price state</dt><dd>{priceState === "sale" ? "Sale seal" : "Regular price"}</dd></div>
