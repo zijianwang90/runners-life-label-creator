@@ -38,9 +38,23 @@ describe("label backup normalization", () => {
 
   it("keeps a saved label size and pulls an invalid one back into range", () => {
     expect(normalizeAppData({ shoes: [], settings: { labelSize: { widthMm: 240, heightMm: 28 } } }).settings.labelSize).toEqual({ widthMm: 240, heightMm: 28 });
-    const clamped = normalizeAppData({ shoes: [], settings: { labelSize: { widthMm: 9000, heightMm: 1 } } }).settings.labelSize;
-    expect(clamped.widthMm).toBeLessThanOrEqual(280);
-    expect(clamped.heightMm).toBeGreaterThanOrEqual(15);
+    expect(normalizeAppData({ shoes: [], settings: { labelSize: { widthMm: 9000, heightMm: 1 } } }).settings.labelSize).toEqual({ widthMm: 240, heightMm: 23 });
+    // Sizes saved while the limits were 120–280 × 15–35 are brought into today's 160–240 × 23–30.
+    expect(normalizeAppData({ shoes: [], settings: { labelSize: { widthMm: 270, heightMm: 18 } } }).settings.labelSize).toEqual({ widthMm: 240, heightMm: 23 });
+  });
+
+  it("drops the printer settings saved by versions that printed straight to a printer", () => {
+    const data = normalizeAppData({ shoes: [], settings: { printMode: "a4", printerName: "Canon MB2700", useSystemDialog: true } });
+    expect(data.settings).not.toHaveProperty("printerName");
+    expect(data.settings).not.toHaveProperty("useSystemDialog");
+  });
+
+  it("defaults the selling point text to the approved size and keeps a saved choice within range", () => {
+    expect(createDefaultData().settings.featureTextScale).toBe(1);
+    expect(normalizeAppData({ shoes: [] }).settings.featureTextScale).toBe(1);
+    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: 1.4 } }).settings.featureTextScale).toBe(1.4);
+    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: 9 } }).settings.featureTextScale).toBe(1.7);
+    expect(normalizeAppData({ shoes: [], settings: { featureTextScale: "huge" } }).settings.featureTextScale).toBe(1);
   });
 
   it("rejects files without a shoe list", () => {

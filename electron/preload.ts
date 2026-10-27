@@ -4,7 +4,6 @@ import type { AppData, ElectronAPI, PrintPayload, UpdateState } from "../src/typ
 const api: ElectronAPI = {
   loadData: () => ipcRenderer.invoke("data:load"),
   saveData: (data: AppData) => ipcRenderer.invoke("data:save", data),
-  listPrinters: () => ipcRenderer.invoke("printers:list"),
   print: (payload: PrintPayload) => ipcRenderer.invoke("print:run", payload),
   onPrintPayload: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, message: { jobId: string; payload: PrintPayload }) => {

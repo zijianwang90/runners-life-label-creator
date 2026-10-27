@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings } from "../data";
 import type { PrintPayload, ShoeLabel } from "../types";
@@ -21,10 +21,9 @@ function renderJob(patch: Partial<PrintPayload>) {
     kind: "labels",
     labels: [shoe("a", 13)],
     mode: "a4",
-    printerName: "",
-    useSystemDialog: true,
     currencySymbol: "$",
     labelSize: { ...defaultSettings.labelSize },
+    featureTextScale: defaultSettings.featureTextScale,
     calibration: defaultSettings.calibration,
     ...patch
   };
@@ -71,6 +70,16 @@ describe("print document at other label sizes", () => {
   it("draws the label with a matching aspect ratio", () => {
     const { container } = renderJob({ mode: "custom", labelSize: { widthMm: 200, heightMm: 25 }, labels: [shoe("a")] });
     expect(container.querySelector("svg.label-svg")!.getAttribute("viewBox")).toBe("0 0 1840 230");
+  });
+
+  it("prints the selling points at the chosen size", () => {
+    const featureSizes = (container: HTMLElement) =>
+      [...container.querySelectorAll("svg.label-svg text")].filter((text) => text.getAttribute("y") === "162").map((text) => text.getAttribute("font-size"));
+    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")] }).container)).toEqual(["21", "21", "21"]);
+    cleanup();
+    expect(featureSizes(renderJob({ mode: "custom", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
+    cleanup();
+    expect(featureSizes(renderJob({ mode: "a4", labels: [shoe("a")], featureTextScale: 1.5 }).container)).toEqual(["31.5", "31.5", "31.5"]);
   });
 
   it("names the label size on the calibration sheet", () => {

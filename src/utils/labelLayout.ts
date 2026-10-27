@@ -3,11 +3,22 @@ import type { LabelSize } from "../types";
 /**
  * The label is drawn on a canvas that is always 230 units tall. Its width follows the label's aspect
  * ratio (220 × 23 mm → 2200 units), so changing the physical height scales the whole design, while
- * changing the width only gives the model name and selling points more or less room. The left mark and
- * brand block (0–600) and the price block (the right-most 532 units) never change shape.
+ * changing the width changes how much room the model name and selling points get.
+ *
+ * At the approved width and wider, the left mark/brand block (0–600) and the price block (532 units on
+ * the right) keep their size and the text area takes all the extra width. Narrower than that, the two
+ * blocks shrink together with the text area (see `squeezeFor`) so the text is not crushed.
  */
 export const DESIGN_HEIGHT = 230;
 export const BASE_DESIGN_WIDTH = 2200;
+const LEFT_BLOCK_WIDTH = 600;
+const PRICE_BLOCK_WIDTH = 532;
+/** Share of every unit of width missing below the approved width that the logo and price blocks give up. */
+const SQUEEZE_SHARE = 0.5;
+
+/** 1 at the approved width and above; below it, the factor the logo and price blocks are scaled by. */
+export const squeezeFor = (width: number): number =>
+  width >= BASE_DESIGN_WIDTH ? 1 : 1 - (SQUEEZE_SHARE * (BASE_DESIGN_WIDTH - width)) / (LEFT_BLOCK_WIDTH + PRICE_BLOCK_WIDTH);
 
 export const designWidth = (size: LabelSize): number => (DESIGN_HEIGHT * size.widthMm) / size.heightMm;
 
@@ -30,8 +41,8 @@ export interface FeatureSlot { x: number; maxWidth: number }
 export interface LabelLayout {
   /** Canvas width in design units; the viewBox is `0 0 width 230`. */
   width: number;
-  /** Shift that keeps the price block glued to the right edge. */
-  priceOffsetX: number;
+  /** Scale of the logo and price blocks: 1 at the approved width and above, smaller on narrower labels. */
+  squeeze: number;
   model: { x: number; y: number; maxWidth: number };
   features: FeatureSlot[];
   separatorXs: number[];
@@ -39,16 +50,19 @@ export interface LabelLayout {
 
 export function computeLabelLayout(width: number, featureCount: number): LabelLayout {
   const count = Math.min(3, Math.max(0, Math.round(featureCount)));
-  const spread = (width - FEATURE_RIGHT_INSET - FEATURE_FIRST_X) / FEATURE_SPAN_AT_BASE;
+  const squeeze = squeezeFor(width);
+  const modelX = MODEL_X * squeeze;
+  const firstX = FEATURE_FIRST_X * squeeze;
+  const rightLimit = width - FEATURE_RIGHT_INSET * squeeze;
+  const spread = (rightLimit - firstX) / FEATURE_SPAN_AT_BASE;
   const slotSet = count === 0 ? { starts: [], separators: [] } : FEATURE_SLOTS[count as 1 | 2 | 3];
-  const xs = slotSet.starts.map((start) => FEATURE_FIRST_X + (start - FEATURE_FIRST_X) * spread);
-  const separatorXs = slotSet.separators.map((x) => FEATURE_FIRST_X + (x - FEATURE_FIRST_X) * spread);
-  const rightLimit = width - FEATURE_RIGHT_INSET;
+  const xs = slotSet.starts.map((start) => firstX + (start - FEATURE_FIRST_X) * spread);
+  const separatorXs = slotSet.separators.map((x) => firstX + (x - FEATURE_FIRST_X) * spread);
 
   return {
     width,
-    priceOffsetX: width - BASE_DESIGN_WIDTH,
-    model: { x: MODEL_X, y: count === 0 ? 137 : 105, maxWidth: width - MODEL_X - MODEL_RIGHT_INSET },
+    squeeze,
+    model: { x: modelX, y: count === 0 ? 137 : 105, maxWidth: width - modelX - MODEL_RIGHT_INSET * squeeze },
     features: xs.map((x, index) => ({
       x,
       maxWidth: (index < separatorXs.length ? separatorXs[index] - FEATURE_SEPARATOR_GAP : rightLimit) - x

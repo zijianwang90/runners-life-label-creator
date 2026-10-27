@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   a4Layout,
   changeLabelSize,
+  clampFeatureScale,
   clampLabelSize,
   DEFAULT_LABEL_SIZE,
+  FEATURE_TEXT_SCALE,
+  featureTextPrintSize,
   formatLabelSize,
   LABEL_SIZE_LIMITS,
   labelSizeRanges
@@ -32,15 +35,18 @@ describe("label size limits", () => {
   });
 
   it("moves the other dimension when the aspect ratio would break", () => {
-    // Taller than a 200 mm label can carry: the height wins when it is the anchor, so the width grows.
-    const tall = clampLabelSize({ widthMm: 200, heightMm: 30 }, "heightMm");
-    expect(tall.heightMm).toBe(30);
-    expect(tall.widthMm).toBe(240);
+    // 160 × 30 mm is 5.3:1, too square to lay out. If the height is what the user chose, the width grows...
+    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "heightMm")).toEqual({ widthMm: 195, heightMm: 30 });
+    // ...and if the width is what they chose, the height gives way instead.
+    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "widthMm")).toEqual({ widthMm: 160, heightMm: 24.6 });
+  });
 
-    // Same request anchored on the width: the height gives way instead.
-    const narrow = clampLabelSize({ widthMm: 200, heightMm: 30 }, "widthMm");
-    expect(narrow.widthMm).toBe(200);
-    expect(narrow.heightMm).toBe(25);
+  it("allows the whole range that was asked for where the shape is valid", () => {
+    expect(clampLabelSize({ widthMm: 160, heightMm: 23 })).toEqual({ widthMm: 160, heightMm: 23 });
+    expect(clampLabelSize({ widthMm: 240, heightMm: 23 })).toEqual({ widthMm: 240, heightMm: 23 });
+    expect(clampLabelSize({ widthMm: 240, heightMm: 30 })).toEqual({ widthMm: 240, heightMm: 30 });
+    expect(LABEL_SIZE_LIMITS.widthMm).toEqual({ min: 160, max: 240 });
+    expect(LABEL_SIZE_LIMITS.heightMm).toEqual({ min: 23, max: 30 });
   });
 
   it("always returns an in-range size for any combination", () => {
@@ -60,9 +66,11 @@ describe("label size limits", () => {
   });
 
   it("reports the range each dimension may take given the other", () => {
-    const ranges = labelSizeRanges(DEFAULT_LABEL_SIZE);
-    expect(ranges.widthMm).toEqual({ min: 184, max: 280 });
-    expect(ranges.heightMm).toEqual({ min: 17.6, max: 27.5 });
+    // The approved size sits well inside the shape limits, so nothing is held back.
+    expect(labelSizeRanges(DEFAULT_LABEL_SIZE)).toEqual({ widthMm: { min: 160, max: 240 }, heightMm: { min: 23, max: 30 } });
+    // Narrow labels cannot be tall, and tall labels cannot be narrow.
+    expect(labelSizeRanges({ widthMm: 160, heightMm: 23 }).heightMm).toEqual({ min: 23, max: 24.6 });
+    expect(labelSizeRanges({ widthMm: 240, heightMm: 30 }).widthMm).toEqual({ min: 195, max: 240 });
   });
 
   it("formats sizes without trailing zeros", () => {
@@ -77,18 +85,43 @@ describe("editing one dimension", () => {
   });
 
   it("keeps what was typed and adjusts the other dimension when the aspect ratio would break", () => {
-    // 150 mm wide with a 25 mm height is 6:1, narrower than allowed: the height gives way.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 150)).toEqual({ size: { widthMm: 150, heightMm: 18.7 }, adjusted: "heightMm" });
-    // 30 mm tall needs at least 240 mm of width.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "heightMm", 30)).toEqual({ size: { widthMm: 240, heightMm: 30 }, adjusted: "widthMm" });
-    // Too long and thin: 200 × 15 is 13.3:1, so the width gives way.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "heightMm", 15)).toEqual({ size: { widthMm: 187.5, heightMm: 15 }, adjusted: "widthMm" });
-    // A wide label that is still within the limits needs no adjustment.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 280).adjusted).toBeNull();
+    // 170 mm wide cannot be 30 mm tall (5.7:1): the height gives way.
+    expect(changeLabelSize({ widthMm: 200, heightMm: 30 }, "widthMm", 170)).toEqual({ size: { widthMm: 170, heightMm: 26.1 }, adjusted: "heightMm" });
+    // 30 mm tall needs at least 195 mm of width.
+    expect(changeLabelSize({ widthMm: 180, heightMm: 25 }, "heightMm", 30)).toEqual({ size: { widthMm: 195, heightMm: 30 }, adjusted: "widthMm" });
+  });
+
+  it("applies the fixed limits to the edited value first", () => {
+    // 150 mm is below the 160 mm minimum: it becomes 160, and the height follows from that.
+    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 150)).toEqual({ size: { widthMm: 160, heightMm: 24.6 }, adjusted: "heightMm" });
   });
 
   it("does not report an adjustment when the other value is already right", () => {
     expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 200).adjusted).toBeNull();
+    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 240).adjusted).toBeNull();
+  });
+});
+
+describe("selling point text scale", () => {
+  it("keeps the approved size by default and clamps to 80–170%", () => {
+    expect(FEATURE_TEXT_SCALE.default).toBe(1);
+    expect(clampFeatureScale(1)).toBe(1);
+    expect(clampFeatureScale(1.35)).toBe(1.35);
+    expect(clampFeatureScale(5)).toBe(1.7);
+    expect(clampFeatureScale(0.2)).toBe(0.8);
+  });
+
+  it("falls back to the approved size for anything that is not a usable number", () => {
+    for (const bad of [undefined, null, "big", NaN, 0, -1, Infinity]) expect(clampFeatureScale(bad)).toBe(1);
+  });
+
+  it("converts the scale to the size the text prints at", () => {
+    // The approved text is 21 units of a 230-unit-tall label: 2.1 mm on a 23 mm label.
+    expect(featureTextPrintSize(1, 23).mm).toBeCloseTo(2.1, 5);
+    expect(featureTextPrintSize(1, 23).pt).toBeCloseTo(5.95, 1);
+    expect(featureTextPrintSize(1.5, 23).pt).toBeCloseTo(8.93, 1);
+    // A taller label prints the same scale larger.
+    expect(featureTextPrintSize(1, 30).mm).toBeCloseTo(2.74, 2);
   });
 });
 
@@ -98,8 +131,8 @@ describe("A4 landscape imposition", () => {
   });
 
   it("fits more short labels and fewer tall ones", () => {
-    expect(a4Layout({ widthMm: 180, heightMm: 15 }).perPage).toBe(12);
-    expect(a4Layout({ widthMm: 280, heightMm: 35 }).perPage).toBe(5);
+    expect(a4Layout({ widthMm: 160, heightMm: 23 }).perPage).toBe(8);
+    expect(a4Layout({ widthMm: 240, heightMm: 30 }).perPage).toBe(6);
   });
 
   it("leaves room for the crop marks beside the widest label", () => {

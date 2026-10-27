@@ -1,6 +1,5 @@
 import { FileDown, Minus, Plus, Printer, Ruler, Trash2, X } from "lucide-react";
-import type { AppSettings, PrinterInfoLite, ShoeLabel } from "../types";
-import { SAVE_PDF_PRINTER } from "../types";
+import type { AppSettings, ShoeLabel } from "../types";
 import { expandLabelCopies } from "../utils/labels";
 import { a4Layout, formatLabelSize } from "../utils/labelSize";
 import { LabelSvg } from "./LabelSvg";
@@ -9,8 +8,6 @@ interface PrintDialogProps {
   open: boolean;
   shoes: ShoeLabel[];
   settings: AppSettings;
-  printers: PrinterInfoLite[];
-  loadingPrinters: boolean;
   printing: boolean;
   onClose: () => void;
   onShoesChange: (shoes: ShoeLabel[]) => void;
@@ -26,7 +23,6 @@ export function PrintDialog(props: PrintDialogProps) {
   const size = props.settings.labelSize;
   const perSheet = a4Layout(size).perPage;
   const sizeText = formatLabelSize(size);
-  const savingPdf = props.settings.printerName === SAVE_PDF_PRINTER;
   const update = (patch: Partial<AppSettings>) => props.onSettingsChange({ ...props.settings, ...patch });
   const updateCalibration = (patch: Partial<AppSettings["calibration"]>) => update({ calibration: { ...props.settings.calibration, ...patch } });
   const number = (value: string, fallback: number) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -43,7 +39,7 @@ export function PrintDialog(props: PrintDialogProps) {
     <div className="modal-backdrop" onMouseDown={props.onClose}>
       <section className="modal print-dialog" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="print-title">
         <header className="modal-header">
-          <div><span className="eyebrow">{savingPdf ? "PDF EXPORT" : "PRINT JOB"}</span><h2 id="print-title">{savingPdf ? "Save" : "Print"} {copies} label{copies === 1 ? "" : "s"}{savingPdf ? " as PDF" : ""}</h2></div>
+          <div><span className="eyebrow">PRINT JOB</span><h2 id="print-title">Print {copies} label{copies === 1 ? "" : "s"}</h2></div>
           <button className="icon-button" onClick={props.onClose} aria-label="Close"><X size={20} /></button>
         </header>
 
@@ -62,7 +58,7 @@ export function PrintDialog(props: PrintDialogProps) {
             <div className="print-cart-list">
               {props.shoes.map((shoe) => (
                 <article className="print-cart-item" key={shoe.id}>
-                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} /></div>
+                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} featureScale={props.settings.featureTextScale} /></div>
                   <div className="cart-item-controls">
                     <span>Copies</span>
                     <div className="quantity-stepper">
@@ -90,23 +86,7 @@ export function PrintDialog(props: PrintDialogProps) {
             </label>
           </fieldset>
 
-          <label className="field full-field">
-            <span>Printer</span>
-            <select value={props.settings.printerName} disabled={props.loadingPrinters} onChange={(event) => update({ printerName: event.target.value })}>
-              <option value="">{props.loadingPrinters ? "Loading printers…" : "System default printer"}</option>
-              <option value={SAVE_PDF_PRINTER}>Save as PDF — local file</option>
-              {props.printers.map((printer) => <option key={printer.name} value={printer.name}>{printer.displayName}{printer.isDefault ? " (Default)" : ""}</option>)}
-            </select>
-          </label>
-
-          {savingPdf ? (
-            <div className="pdf-save-note"><FileDown size={17} /><span><strong>Save locally as PDF</strong><small>You will choose the file name and folder after clicking Save PDF.</small></span></div>
-          ) : (
-            <label className="toggle-row">
-              <input type="checkbox" checked={props.settings.useSystemDialog} onChange={(event) => update({ useSystemDialog: event.target.checked })} />
-              <span><strong>Show Windows print dialog</strong><small>Recommended for the first print on each printer.</small></span>
-            </label>
-          )}
+          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Opens as a PDF, then you print</strong><small>The labels open in your default PDF viewer. Choose your printer there and print at 100% / Actual size (not “Fit to page”).</small></span></div>
 
           <details className="calibration-box">
             <summary><Ruler size={17} /> Printer calibration</summary>
@@ -119,7 +99,7 @@ export function PrintDialog(props: PrintDialogProps) {
             </div>
             <div className="calibration-actions">
               <button className="secondary-button" onClick={() => updateCalibration({ scaleX: 1, scaleY: 1, offsetXmm: 0, offsetYmm: 0 })}>Reset</button>
-              <button className="secondary-button" onClick={props.onCalibrationPrint} disabled={props.printing}><Ruler size={16} /> {savingPdf ? "Save calibration PDF" : "Print calibration"}</button>
+              <button className="secondary-button" onClick={props.onCalibrationPrint} disabled={props.printing}><Ruler size={16} /> Open calibration PDF</button>
             </div>
           </details>
         </div>
@@ -127,7 +107,7 @@ export function PrintDialog(props: PrintDialogProps) {
         <footer className="modal-footer">
           <button className="secondary-button" onClick={props.onClose}>Cancel</button>
           <button className="primary-button" onClick={props.onPrint} disabled={props.printing || copies === 0}>
-            {savingPdf ? <FileDown size={17} /> : <Printer size={17} />} {props.printing ? (savingPdf ? "Creating PDF…" : "Sending to printer…") : (savingPdf ? "Save PDF" : "Print labels")}
+            <Printer size={17} /> {props.printing ? "Creating PDF…" : "Open PDF to print"}
           </button>
         </footer>
       </section>

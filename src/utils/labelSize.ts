@@ -4,15 +4,35 @@ import type { LabelSize } from "../types";
 export const DEFAULT_LABEL_SIZE: LabelSize = { widthMm: 220, heightMm: 23 };
 
 /**
- * Width and height are limited individually, and also together: the label design is drawn on a fixed
- * 230-unit-tall canvas whose width follows the aspect ratio, so a label that is too square leaves no
- * room for the model name and selling points, and one that is too long leaves them stranded.
+ * Width and height are limited individually, and also together. The label is drawn on a fixed
+ * 230-unit-tall canvas whose width follows the aspect ratio. A label that is too square leaves no room
+ * for the model name and selling points, even after the logo and price blocks have been narrowed, so
+ * the shape is kept between 6.5:1 and 10.5:1. (160 × 30 mm would be 5.3:1, which cannot be laid out.)
  */
 export const LABEL_SIZE_LIMITS = {
-  widthMm: { min: 120, max: 280 },
-  heightMm: { min: 15, max: 35 },
-  aspect: { min: 8, max: 12.5 }
+  widthMm: { min: 160, max: 240 },
+  heightMm: { min: 23, max: 30 },
+  aspect: { min: 6.5, max: 10.5 }
 } as const;
+
+/**
+ * How large the three selling points are drawn, relative to the approved design (1 = approved, 1.5 = half
+ * as large again). It is a wish, not a guarantee: a phrase too long for its slot still shrinks to fit,
+ * but never below what the approved design would have used for it.
+ */
+export const FEATURE_TEXT_SCALE = { min: 0.8, max: 1.7, default: 1 } as const;
+
+export function clampFeatureScale(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return FEATURE_TEXT_SCALE.default;
+  return Math.round(Math.min(FEATURE_TEXT_SCALE.max, Math.max(FEATURE_TEXT_SCALE.min, parsed)) * 100) / 100;
+}
+
+/** Print size of the approved selling-point text (21 design units tall) at a given scale and label height. */
+export function featureTextPrintSize(scale: number, heightMm: number): { mm: number; pt: number } {
+  const mm = (21 * scale * heightMm) / 230;
+  return { mm, pt: mm / 0.352778 };
+}
 
 export const A4_LANDSCAPE = { widthMm: 297, heightMm: 210, marginYmm: 13 } as const;
 

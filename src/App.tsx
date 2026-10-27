@@ -8,7 +8,7 @@ import { PrintDialog } from "./components/PrintDialog";
 import { SelectionBar } from "./components/SelectionBar";
 import { ShoeEditor } from "./components/ShoeEditor";
 import { UpdateDialog } from "./components/UpdateDialog";
-import type { AppData, AppSettings, BrandId, LabelSize, PrinterInfoLite, ShoeLabel, UpdateStatus } from "./types";
+import type { AppData, AppSettings, BrandId, LabelSize, ShoeLabel, UpdateStatus } from "./types";
 import { BRAND_IDS } from "./types";
 import { validateShoe } from "./utils/labels";
 import { formatLabelSize } from "./utils/labelSize";
@@ -44,8 +44,6 @@ export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [printQueue, setPrintQueue] = useState<ShoeLabel[]>([]);
-  const [printers, setPrinters] = useState<PrinterInfoLite[]>([]);
-  const [loadingPrinters, setLoadingPrinters] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [appVersion, setAppVersion] = useState("1.0.0");
@@ -109,6 +107,7 @@ export default function App() {
   const updateShoes = (nextShoes: ShoeLabel[]) => setData((current) => current ? { ...current, shoes: nextShoes } : current);
   const updateSettings = (settings: AppSettings) => setData((current) => current ? { ...current, settings } : current);
   const updateLabelSize = (labelSize: LabelSize) => setData((current) => current ? { ...current, settings: { ...current.settings, labelSize } } : current);
+  const updateFeatureTextScale = (featureTextScale: number) => setData((current) => current ? { ...current, settings: { ...current.settings, featureTextScale } } : current);
 
   const addShoe = useCallback(() => {
     const shoe = createEmptyShoe();
@@ -171,7 +170,7 @@ export default function App() {
     });
   };
 
-  async function openPrintDialog() {
+  function openPrintDialog() {
     if (!data) return;
     const candidates = shoes.filter((shoe) => selectedIds.has(shoe.id));
     if (candidates.length === 0) {
@@ -186,12 +185,6 @@ export default function App() {
     }
     setPrintQueue(candidates.map((shoe) => ({ ...structuredClone(shoe), quantity: 1 })));
     setPrintOpen(true);
-    if (window.electronAPI) {
-      setLoadingPrinters(true);
-      try { setPrinters(await window.electronAPI.listPrinters()); }
-      catch { showToast("Could not read the Windows printer list.", "error"); }
-      finally { setLoadingPrinters(false); }
-    }
   }
 
   async function runPrint(kind: "labels" | "calibration") {
@@ -205,24 +198,21 @@ export default function App() {
         kind,
         labels: kind === "labels" ? printQueue : [],
         mode: data.settings.printMode,
-        printerName: data.settings.printerName,
-        useSystemDialog: data.settings.useSystemDialog,
         currencySymbol: data.settings.currencySymbol,
         labelSize: data.settings.labelSize,
+        featureTextScale: data.settings.featureTextScale,
         calibration: data.settings.calibration
       });
       if (result.success) {
-        showToast(result.outputPath
-          ? `PDF saved to ${result.outputPath}`
-          : kind === "labels" ? "Print job sent successfully." : "Calibration print sent.", "success");
+        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} opened as a PDF — print it from the PDF viewer.`, "success");
         if (kind === "labels") {
           setPrintOpen(false);
           setSelectedIds(new Set());
           setPrintQueue([]);
         }
-      } else showToast(result.reason || "The print job failed.", result.reason?.toLowerCase().includes("cancel") ? "info" : "error");
+      } else showToast(result.reason || "Could not create the PDF.", "error");
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "The print job failed.", "error");
+      showToast(error instanceof Error ? error.message : "Could not create the PDF.", "error");
     } finally { setPrinting(false); }
   }
 
@@ -292,7 +282,7 @@ export default function App() {
             })}
           </div>
         </section>
-        <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} />
+        <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} featureTextScale={data.settings.featureTextScale} onFeatureTextScaleChange={updateFeatureTextScale} />
       </main>
 
       <footer className="app-footer"><span>Runners Life Label Creator v{appVersion}{updater.state && <> · <button className="link-button" onClick={openUpdates}>Check for updates</button></>}</span><span>Offline data · {formatLabelSize(data.settings.labelSize)} label · approved Scheme A system</span></footer>
@@ -300,8 +290,6 @@ export default function App() {
         open={printOpen}
         shoes={printQueue}
         settings={data.settings}
-        printers={printers}
-        loadingPrinters={loadingPrinters}
         printing={printing}
         onClose={() => { if (!printing) { setPrintOpen(false); setPrintQueue([]); } }}
         onShoesChange={setPrintQueue}

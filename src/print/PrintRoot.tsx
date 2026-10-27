@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { LabelSvg } from "../components/LabelSvg";
 import type { CalibrationSettings, LabelSize, PrintPayload, ShoeLabel } from "../types";
 import { expandLabelCopies, paginate } from "../utils/labels";
-import { a4Layout, clampLabelSize, formatLabelSize, formatMm } from "../utils/labelSize";
+import { a4Layout, clampFeatureScale, clampLabelSize, formatLabelSize, formatMm } from "../utils/labelSize";
 
 interface JobState { jobId: string; payload: PrintPayload }
 
@@ -19,7 +19,7 @@ function CustomLabels({ labels, payload, size }: { labels: ShoeLabel[]; payload:
   return <>{labels.map((shoe, index) => (
     <section className="custom-print-page" key={`${shoe.id}-${index}`}>
       <div className="calibrated-label" style={calibratedStyle(payload.calibration)}>
-        <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} />
+        <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} featureScale={clampFeatureScale(payload.featureTextScale)} />
       </div>
     </section>
   ))}</>;
@@ -36,7 +36,7 @@ function A4Labels({ labels, payload, size }: { labels: ShoeLabel[]; payload: Pri
           <div className="a4-label-slot" key={`${shoe.id}-${index}`}>
             <CropMarks />
             <div className="calibrated-label" style={calibratedStyle(payload.calibration)}>
-              <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} />
+              <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} featureScale={clampFeatureScale(payload.featureTextScale)} />
             </div>
           </div>
         ))}

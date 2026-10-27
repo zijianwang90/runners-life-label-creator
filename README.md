@@ -11,8 +11,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - Everything is saved automatically on this computer; there is nothing to import or export.
 - **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 120–280 mm × 15–35 mm; if a change would push the shape outside 8:1–12.5:1, the other value is adjusted automatically and a notice explains it). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
 - **AI selling points**: tick labels, click `AI selling points`, copy the generated prompt into any AI tool (ChatGPT, Claude, Gemini…), paste its reply back and review it. Each label gets three selling points: shoe type (race / stability / neutral…), heel-to-toe drop, and the midsole foam technology (the brand's official foam name, e.g. PWRRUN PB, never marketing wording). Low-confidence answers are unticked and flagged so specs can be checked before printing.
-- Print through the Windows printer list or the Windows print dialog.
-- Choose `Save as PDF — local file` as a virtual printer to export the exact A4 or 220 × 23 mm print layout through a local save dialog.
+- Printing is one click: the app renders the exact A4 or label-size print layout to a PDF and opens it in your default PDF viewer (Edge, Chrome, Acrobat…), where you pick the printer and print yourself. The app never talks to a printer driver, so it works with any printer.
 - Print one 220 × 23 mm label per page, or eight labels on an A4 landscape sheet with crop marks.
 - Per-printer X/Y scale and offset calibration, including a calibration test page.
 
@@ -66,9 +65,10 @@ The app looks for a newer version on this repository's [GitHub Releases](https:/
 
 | Copy of the app | What **Update and restart** does |
 | --- | --- |
-| Windows portable | Downloads the new `Portable` exe, replaces the running file in place (same name and folder, so shortcuts keep working) and starts it again. The folder must be writable. |
+| Windows portable folder (the unzipped `Portable` zip) | Downloads the new `Portable` zip, unpacks it, copies the files over its own folder and starts it again. The folder must be writable and the program file must keep its name. |
+| Windows portable exe (single file) | Downloads the new `Portable` exe, replaces the running file in place (same name and folder, so shortcuts keep working) and starts it again. The folder must be writable. |
 | Windows installed (Setup) | Downloads the `Setup` exe and runs it silently over the existing installation, then reopens the app. |
-| macOS, an unpacked folder, a dev run | Cannot replace itself; opens the release page instead. |
+| macOS, a dev run | Cannot replace itself; opens the release page instead. |
 
 Every download must come from this repository's own release files and match the SHA-256 that GitHub publishes for the asset (or `SHA256SUMS.txt` in the release). A file that does not match is deleted and nothing is installed. Builds are not code-signed, so this protects against damaged downloads, not against someone with write access to the repository; keep the GitHub account protected with two-factor authentication.
 
@@ -83,17 +83,18 @@ npm version minor      # or patch / major: bumps package.json, commits and tags 
 git push --follow-tags
 ```
 
-The tag starts the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)). It runs the tests, builds the Windows installer and portable exe plus the macOS dmg and zip, writes `SHA256SUMS.txt` and publishes a GitHub release with generated notes. The notes show up in the app's update dialog and can be edited on GitHub afterwards. Computers running the app pick the release up on their next check.
+The tag starts the **Release** workflow ([.github/workflows/release.yml](.github/workflows/release.yml)). It runs the tests, builds the Windows installer, portable exe and portable zip plus the macOS dmg and zip, writes `SHA256SUMS.txt` and publishes a GitHub release with generated notes. The notes show up in the app's update dialog and can be edited on GitHub afterwards. Computers running the app pick the release up on their next check.
 
 A release marked *draft* or *pre-release* is ignored by the updater, which makes it a safe way to publish something for testing first. The workflow refuses a tag that does not match the version in `package.json`.
 
 ## Printing setup
 
-1. Start with **Show Windows print dialog** enabled.
-2. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
-3. In the printer driver, disable scaling options such as “Fit to page”; use 100% or Actual size.
-4. Print the calibration page, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
-5. Save a separate Windows printer preset for this label job when the driver supports presets.
+1. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
+2. Click **Open PDF to print**. The PDF opens in the system's default viewer; choose your printer there and print.
+3. In the viewer's print dialog, set the scale to 100% / Actual size — not “Fit to page” or “Shrink to fit” — and leave the margins at their defaults.
+4. Open the calibration PDF, print it, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
+
+The PDFs are written to the system temp folder (`runners-life-label-creator`) and removed after about a week. To keep one, use the viewer's *Save as*.
 
 Application data is stored in Electron's Windows user-data folder as `labels.json` and is written atomically.
 

@@ -17,6 +17,7 @@ import {
   type ReleaseInfo
 } from "../src/update/release";
 import { downloadVerified, IntegrityError, type FetchLike } from "./download";
+import { extractZip, resolveExtractedRoot } from "./extract";
 
 /** Releases are read from (and downloaded from) this public GitHub repository. */
 export const UPDATE_REPO: GithubRepo = { owner: "zijianwang90", repo: "runners-life-label-creator" };
@@ -42,6 +43,19 @@ const PORTABLE_APPLY_SCRIPT = [
   ":launch",
   'start "" "%RL_UPDATE_TARGET%"',
   "exit /b 0",
+  ""
+].join("\r\n");
+
+/**
+ * Copies the unpacked update over the app folder once the old copy has closed, then starts it.
+ * robocopy retries any file that is still in use, so a slow shutdown only delays the copy.
+ * Paths come through the environment, which keeps this script plain ASCII for any user name.
+ */
+const FOLDER_APPLY_SCRIPT = [
+  "$ErrorActionPreference = 'SilentlyContinue'",
+  "Wait-Process -Id ([int]$env:RL_UPDATE_PID) -Timeout 60",
+  "robocopy $env:RL_UPDATE_SOURCE $env:RL_UPDATE_TARGET /E /IS /IT /R:30 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null",
+  "Start-Process -FilePath $env:RL_UPDATE_EXE",
   ""
 ].join("\r\n");
 
@@ -209,6 +223,7 @@ export class Updater {
       this.setStatus({ state: "installing", update });
       await this.hooks.flushData();
       if (this.channel === "portable") await this.applyPortable(file, directory);
+      else if (this.channel === "folder") await this.applyFolder(file, directory);
       else await launchDetached(file, ["--updated", "/S", "--force-run"]);
       app.quit();
     } catch (error) {
@@ -246,7 +261,40 @@ export class Updater {
     });
   }
 
-  /** Removes what an earlier update left behind (downloads, the swap script, a staged exe). */
+  private async applyFolder(downloaded: string, directory: string): Promise<void> {
+    const exe = process.execPath;
+    const appFolder = path.dirname(exe);
+
+    // Fail now, with the app still open, rather than after it has quit.
+    const probe = path.join(appFolder, `.update-write-test-${process.pid}`);
+    try {
+      await fs.writeFile(probe, "");
+      await fs.rm(probe);
+    } catch {
+      throw new Error(`The app cannot write to its own folder (${appFolder}). Move it to a folder you can write to, or download the new version by hand.`);
+    }
+
+    const unpacked = path.join(directory, "unpacked");
+    await extractZip(downloaded, unpacked);
+    const source = await resolveExtractedRoot(unpacked);
+    const exeName = path.basename(exe);
+    if (!(await fs.stat(path.join(source, exeName)).then((stat) => stat.isFile(), () => false))) {
+      throw new Error(`The update does not contain "${exeName}". Do not rename the program file, or download the new version by hand.`);
+    }
+
+    const script = path.join(directory, "apply-update.ps1");
+    await fs.writeFile(script, FOLDER_APPLY_SCRIPT, "ascii");
+    const powershell = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    await launchDetached(powershell, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script], {
+      ...process.env,
+      RL_UPDATE_PID: String(process.pid),
+      RL_UPDATE_SOURCE: source,
+      RL_UPDATE_TARGET: appFolder,
+      RL_UPDATE_EXE: exe
+    });
+  }
+
+  /** Removes what an earlier update left behind (downloads, unpacked files, the swap script, a staged exe). */
   async cleanupLeftovers(): Promise<void> {
     await fs.rm(updateDir(), { recursive: true, force: true }).catch(() => undefined);
     const portable = process.env.PORTABLE_EXECUTABLE_FILE;

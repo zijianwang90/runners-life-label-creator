@@ -3,8 +3,8 @@ import designTokens from "../../design/label-design-system.json";
 import { brandLogos, runnersLifeLogo } from "../assets";
 import type { LabelSize, ShoeLabel } from "../types";
 import { featureFontSize, formatMoney, getPriceState, modelFontSize, moneyParts, savingsAmount } from "../utils/labels";
-import { computeLabelLayout, DESIGN_HEIGHT, designWidth, fitText } from "../utils/labelLayout";
-import { DEFAULT_LABEL_SIZE } from "../utils/labelSize";
+import { BASE_DESIGN_WIDTH, computeLabelLayout, DESIGN_HEIGHT, designWidth, fitText } from "../utils/labelLayout";
+import { clampFeatureScale, DEFAULT_LABEL_SIZE } from "../utils/labelSize";
 
 const LABEL_FONT = '"Barlow Condensed", "Arial Narrow", "Segoe UI", Arial, sans-serif';
 
@@ -47,13 +47,16 @@ interface LabelSvgProps {
   currencySymbol?: string;
   /** Physical label size; only its aspect ratio changes the layout, the rest is plain scaling. */
   size?: LabelSize;
+  /** Size of the selling points relative to the approved design; 1 draws exactly the approved label. */
+  featureScale?: number;
   className?: string;
   title?: string;
 }
 
 const round = (value: number) => Math.round(value * 1000) / 1000;
+const PRICE_POLYGON = [[1730, 0], [2200, 0], [2200, 230], [1668, 230]] as const;
 
-export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, className = "", title }: LabelSvgProps) {
+export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, featureScale = 1, className = "", title }: LabelSvgProps) {
   const rawId = useId().replace(/:/g, "");
   const speedPatternId = `speed-${rawId}`;
   const runnerClipId = `runner-${rawId}`;
@@ -63,6 +66,10 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const displayedPrice = priceState === "sale" ? shoe.salePrice : shoe.regularPrice;
   const features = shoe.features.map((feature) => feature.trim()).filter(Boolean).slice(0, 3);
   const layout = computeLabelLayout(designWidth(size), features.length);
+  const textScale = clampFeatureScale(featureScale);
+  // The divider between selling points grows with their text: 140–170 at the approved 21-unit size.
+  const separatorTop = round(162 - 22 * textScale);
+  const separatorBottom = round(162 + 8 * textScale);
   const canvasWidth = round(layout.width);
   const modelText = (shoe.model || "SHOE MODEL").toUpperCase();
   const modelFit = fitText(modelText, {
@@ -81,6 +88,15 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const mark = designTokens.layout.runnersLifeMarkRegion;
   const seal = designTokens.pricingStates.sale.saleSeal;
   const runnerImageWidth = mark.symbolBounds.height * (440.2 / 144.6);
+
+  // On labels narrower than the approved one the logo and price blocks shrink. Their shapes narrow in x
+  // only; their content scales uniformly about the label's vertical centre so nothing is stretched.
+  const squeeze = layout.squeeze;
+  const centreShift = round((DESIGN_HEIGHT / 2) * (1 - squeeze));
+  const leftPolygon = mark.polygon.map(([x, y]) => `${round(x * squeeze)},${y}`).join(" ");
+  const pricePolygon = PRICE_POLYGON.map(([x, y]) => `${round(layout.width - (BASE_DESIGN_WIDTH - x) * squeeze)},${y}`).join(" ");
+  const leftContentTransform = `translate(0 ${centreShift}) scale(${round(squeeze)})`;
+  const priceContentTransform = `translate(${round(layout.width)} ${centreShift}) scale(${round(squeeze)}) translate(${-BASE_DESIGN_WIDTH} 0)`;
 
   return (
     <svg
@@ -120,28 +136,29 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
 
       <rect width={canvasWidth} height={DESIGN_HEIGHT} fill="#fff" />
       <rect x="1" y="1" width={round(layout.width - 2)} height="228" fill="none" stroke={designTokens.canvas.border.color} strokeWidth="2" />
-      <polygon points={mark.polygon.map((point) => point.join(",")).join(" ")} fill={`url(#${redGradientId})`} />
-      <polygon points={mark.polygon.map((point) => point.join(",")).join(" ")} fill={`url(#${speedPatternId})`} />
-      <image
-        href={runnersLifeLogo}
-        x={mark.symbolBounds.x}
-        y={mark.symbolBounds.y}
-        width={runnerImageWidth}
-        height={mark.symbolBounds.height}
-        preserveAspectRatio="xMinYMid meet"
-        clipPath={`url(#${runnerClipId})`}
-        filter={`url(#${runnerWhiteFilterId})`}
-      />
-
-      <image
-        href={brandLogos[shoe.brand]}
-        x={brandX}
-        y={brandY}
-        width={brandWidth}
-        height={brandHeight}
-        preserveAspectRatio="xMidYMid meet"
-      />
-      <line x1="600" y1="42" x2="600" y2="188" stroke={designTokens.palette.divider} strokeWidth="2" />
+      <polygon points={leftPolygon} fill={`url(#${redGradientId})`} />
+      <polygon points={leftPolygon} fill={`url(#${speedPatternId})`} />
+      <g transform={leftContentTransform}>
+        <image
+          href={runnersLifeLogo}
+          x={mark.symbolBounds.x}
+          y={mark.symbolBounds.y}
+          width={runnerImageWidth}
+          height={mark.symbolBounds.height}
+          preserveAspectRatio="xMinYMid meet"
+          clipPath={`url(#${runnerClipId})`}
+          filter={`url(#${runnerWhiteFilterId})`}
+        />
+        <image
+          href={brandLogos[shoe.brand]}
+          x={brandX}
+          y={brandY}
+          width={brandWidth}
+          height={brandHeight}
+          preserveAspectRatio="xMidYMid meet"
+        />
+        <line x1="600" y1="42" x2="600" y2="188" stroke={designTokens.palette.divider} strokeWidth="2" />
+      </g>
 
       <text
         x={layout.model.x}
@@ -159,7 +176,13 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
 
       {features.map((feature, index) => {
         const slot = layout.features[index];
-        const fit = fitText(feature, { baseSize: featureFontSize(feature), maxWidth: slot.maxWidth, weight: 600 });
+        const fit = fitText(feature, {
+          baseSize: round(featureFontSize(feature) * textScale),
+          maxWidth: slot.maxWidth,
+          weight: 600,
+          // Never shrink below what the approved design would have used, however large the wish.
+          minRatio: Math.min(0.8, 0.8 / textScale)
+        });
         return (
           <text
             key={`${index}-${feature}`}
@@ -177,12 +200,12 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
         );
       })}
       {layout.separatorXs.map((x) => (
-        <line key={x} x1={round(x)} y1="140" x2={round(x)} y2="170" stroke={designTokens.palette.runnersLifeRed} strokeWidth="2" />
+        <line key={x} x1={round(x)} y1={separatorTop} x2={round(x)} y2={separatorBottom} stroke={designTokens.palette.runnersLifeRed} strokeWidth="2" />
       ))}
 
-      <g transform={`translate(${round(layout.priceOffsetX)} 0)`}>
-        <polygon points="1730,0 2200,0 2200,230 1668,230" fill={`url(#${redGradientId})`} />
-        <polygon points="1730,0 2200,0 2200,230 1668,230" fill={`url(#${speedPatternId})`} />
+      <polygon points={pricePolygon} fill={`url(#${redGradientId})`} />
+      <polygon points={pricePolygon} fill={`url(#${speedPatternId})`} />
+      <g transform={priceContentTransform}>
 
         {priceState === "sale" ? (
           <>

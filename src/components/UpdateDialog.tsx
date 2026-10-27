@@ -13,6 +13,7 @@ interface UpdateDialogProps {
 
 const HOW_IT_UPDATES: Record<UpdateChannel, string> = {
   portable: "This portable copy downloads the new version, replaces itself and restarts. Your labels and settings are kept.",
+  folder: "This portable folder downloads the new version, copies it over its own files and restarts. Your labels and settings are kept.",
   installer: "The installer runs quietly in the background and the app restarts. Your labels and settings are kept.",
   manual: "This copy cannot update itself. Download the new version from the release page."
 };

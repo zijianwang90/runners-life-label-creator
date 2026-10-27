@@ -1,13 +1,12 @@
 import type { AppData, AppSettings, BrandId, ShoeLabel } from "./types";
 import { BRAND_IDS } from "./types";
-import { clampLabelSize, DEFAULT_LABEL_SIZE } from "./utils/labelSize";
+import { clampFeatureScale, clampLabelSize, DEFAULT_LABEL_SIZE, FEATURE_TEXT_SCALE } from "./utils/labelSize";
 
 export const defaultSettings: AppSettings = {
   currencySymbol: "$",
   printMode: "a4",
-  printerName: "",
-  useSystemDialog: true,
   labelSize: { ...DEFAULT_LABEL_SIZE },
+  featureTextScale: FEATURE_TEXT_SCALE.default,
   calibration: {
     scaleX: 1,
     scaleY: 1,
@@ -81,9 +80,8 @@ export function normalizeAppData(input: unknown): AppData {
         ? rawSettings.currencySymbol.slice(0, 3)
         : "$",
       printMode: rawSettings.printMode === "custom" ? "custom" : "a4",
-      printerName: typeof rawSettings.printerName === "string" ? rawSettings.printerName : "",
-      useSystemDialog: rawSettings.useSystemDialog !== false,
       labelSize: clampLabelSize(rawSettings.labelSize),
+      featureTextScale: clampFeatureScale(rawSettings.featureTextScale),
       calibration: {
         scaleX: Math.min(1.05, Math.max(0.95, Number(calibration.scaleX) || 1)),
         scaleY: Math.min(1.05, Math.max(0.95, Number(calibration.scaleY) || 1)),

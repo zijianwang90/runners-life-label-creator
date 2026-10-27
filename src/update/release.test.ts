@@ -90,11 +90,16 @@ describe("pickAsset", () => {
     asset("Runners-Life-Label-Creator-Setup-1.2.0-arm64.exe"),
     asset("Runners-Life-Label-Creator-Portable-x64.exe"),
     asset("Runners-Life-Label-Creator-Portable-x64.exe.blockmap"),
+    asset("Runners-Life-Label-Creator-Portable-x64.zip"),
     asset("Runners-Life-Label-Creator-1.2.0-universal.dmg")
   ];
 
   it("picks the portable exe for a portable copy", () => {
     expect(pickAsset(assets, "portable", "x64")?.name).toBe("Runners-Life-Label-Creator-Portable-x64.exe");
+  });
+
+  it("picks the portable zip for an unzipped portable folder", () => {
+    expect(pickAsset(assets, "folder", "x64")?.name).toBe("Runners-Life-Label-Creator-Portable-x64.zip");
   });
 
   it("picks the installer that matches the CPU", () => {
@@ -138,8 +143,11 @@ describe("detectUpdateChannel", () => {
     expect(detectUpdateChannel({ ...base, hasUninstaller: true })).toBe("installer");
   });
 
-  it("does not self-update an unpacked folder, a dev run or another platform", () => {
-    expect(detectUpdateChannel(base)).toBe("manual");
+  it("treats an app folder without an uninstaller (the unzipped portable) as updatable in place", () => {
+    expect(detectUpdateChannel(base)).toBe("folder");
+  });
+
+  it("does not self-update a dev run or another platform", () => {
     expect(detectUpdateChannel({ ...base, isPackaged: false, hasUninstaller: true })).toBe("manual");
     expect(detectUpdateChannel({ ...base, platform: "darwin", hasUninstaller: true })).toBe("manual");
   });

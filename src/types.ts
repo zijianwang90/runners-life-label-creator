@@ -1,5 +1,4 @@
 export const BRAND_IDS = ["new-balance", "saucony", "asics", "brooks"] as const;
-export const SAVE_PDF_PRINTER = "__save_pdf__";
 
 export type BrandId = (typeof BRAND_IDS)[number];
 export type PrintMode = "custom" | "a4";
@@ -33,9 +32,9 @@ export interface LabelSize {
 export interface AppSettings {
   currencySymbol: string;
   printMode: PrintMode;
-  printerName: string;
-  useSystemDialog: boolean;
   labelSize: LabelSize;
+  /** Size of the three selling points relative to the approved design (1 = approved). */
+  featureTextScale: number;
   calibration: CalibrationSettings;
 }
 
@@ -45,39 +44,32 @@ export interface AppData {
   settings: AppSettings;
 }
 
-export interface PrinterInfoLite {
-  name: string;
-  displayName: string;
-  description: string;
-  status: number;
-  isDefault: boolean;
-}
-
 export interface PrintPayload {
   jobId?: string;
   kind: "labels" | "calibration";
   labels: ShoeLabel[];
   mode: PrintMode;
-  printerName: string;
-  useSystemDialog: boolean;
   currencySymbol: string;
   labelSize: LabelSize;
+  featureTextScale: number;
   calibration: CalibrationSettings;
 }
 
 export interface PrintResult {
   success: boolean;
   reason?: string;
+  /** The PDF that was written and opened in the system's default PDF viewer. */
   outputPath?: string;
 }
 
 /**
  * How this copy of the app can bring itself up to date:
- * - `portable`: the Windows portable exe replaces itself and restarts.
+ * - `portable`: the single-file Windows portable exe replaces itself and restarts.
+ * - `folder`: an unzipped Windows portable folder; the new files are copied over it and the app restarts.
  * - `installer`: the Windows installer (NSIS) is downloaded and run silently.
- * - `manual`: anything else (macOS, a dev run, an unpacked folder); the app only points to the release page.
+ * - `manual`: anything else (macOS, a dev run); the app only points to the release page.
  */
-export type UpdateChannel = "portable" | "installer" | "manual";
+export type UpdateChannel = "portable" | "folder" | "installer" | "manual";
 
 /** A newer release found on GitHub. */
 export interface UpdateInfo {
@@ -107,7 +99,7 @@ export interface UpdateState {
 export interface ElectronAPI {
   loadData: () => Promise<AppData | null>;
   saveData: (data: AppData) => Promise<void>;
-  listPrinters: () => Promise<PrinterInfoLite[]>;
+  /** Renders the labels to a PDF and opens it in the system's default PDF viewer; printing is done from there. */
   print: (payload: PrintPayload) => Promise<PrintResult>;
   onPrintPayload: (callback: (jobId: string, payload: PrintPayload) => void) => () => void;
   notifyPrintReady: (jobId: string) => void;

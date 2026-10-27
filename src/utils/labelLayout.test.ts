@@ -7,7 +7,8 @@ import {
   estimateTextWidth,
   fitText,
   GLYPH_ADVANCE_COUNTS,
-  GLYPH_TABLE_SIZE
+  GLYPH_TABLE_SIZE,
+  squeezeFor
 } from "./labelLayout";
 import { clampLabelSize, DEFAULT_LABEL_SIZE, LABEL_SIZE_LIMITS } from "./labelSize";
 
@@ -25,7 +26,7 @@ describe("design canvas", () => {
 describe("label layout at the approved size", () => {
   it("keeps every approved coordinate", () => {
     expect(computeLabelLayout(2200, 3)).toMatchObject({
-      priceOffsetX: 0,
+      squeeze: 1,
       model: { x: 650, y: 105, maxWidth: 950 },
       separatorXs: [979, 1293]
     });
@@ -37,32 +38,61 @@ describe("label layout at the approved size", () => {
   });
 });
 
-describe("label layout at other sizes", () => {
-  it("glues the price block to the right edge", () => {
-    expect(computeLabelLayout(2400, 3).priceOffsetX).toBe(200);
-    expect(computeLabelLayout(1900, 3).priceOffsetX).toBe(-300);
+describe("narrow labels", () => {
+  it("keeps the logo and price blocks at full size at the approved width and wider", () => {
+    expect(squeezeFor(2200)).toBe(1);
+    expect(squeezeFor(2400)).toBe(1);
+    expect(computeLabelLayout(2400, 3).squeeze).toBe(1);
   });
 
-  it("spreads the selling points over the room that is left, in order and clear of the price block", () => {
-    for (const width of [1840, 2000, 2200, 2500, 2875]) {
+  it("narrows them below the approved width, gradually and never to nothing", () => {
+    const widths = [2100, 1900, 1700, 1600, 1495];
+    const squeezes = widths.map(squeezeFor);
+    expect(squeezes).toEqual([...squeezes].sort((a, b) => b - a));
+    expect(squeezeFor(1600)).toBeCloseTo(0.735, 3);
+    expect(Math.min(...squeezes)).toBeGreaterThan(0.68);
+  });
+
+  it("gives the text area back most of what the shorter label lost", () => {
+    // At 160 × 23 mm the text area is ~77% of the approved one, not the ~44% it would be without squeezing.
+    const layout = computeLabelLayout(designWidth({ widthMm: 160, heightMm: 23 }), 3);
+    const textArea = layout.width - (600 + 532) * layout.squeeze;
+    expect(textArea / 1068).toBeGreaterThan(0.7);
+  });
+});
+
+describe("label layout at other sizes", () => {
+  it("spreads the selling points over the room that is left, in order, clear of the price block", () => {
+    for (const width of [1495, 1600, 1840, 2200, 2400]) {
       const layout = computeLabelLayout(width, 3);
+      const priceLeft = width - 532 * layout.squeeze;
       const xs = layout.features.map((slot) => slot.x);
       expect(xs).toEqual([...xs].sort((a, b) => a - b));
       layout.features.forEach((slot) => {
-        expect(slot.maxWidth).toBeGreaterThan(100);
-        expect(slot.x + slot.maxWidth).toBeLessThanOrEqual(width - 540);
+        expect(slot.maxWidth).toBeGreaterThan(165);
+        expect(slot.x + slot.maxWidth).toBeLessThan(priceLeft);
       });
       layout.separatorXs.forEach((separator, index) => expect(separator).toBeGreaterThan(layout.features[index].x + layout.features[index].maxWidth));
+      // The model name must also stop before the SALE seal, which reaches 574 units in from the right.
+      expect(layout.model.x + layout.model.maxWidth).toBeLessThanOrEqual(width - 574 * layout.squeeze);
     }
   });
 
-  it("lays out every size the editor allows", () => {
-    for (let width = LABEL_SIZE_LIMITS.widthMm.min; width <= LABEL_SIZE_LIMITS.widthMm.max; width += 20) {
-      for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 4) {
+  it("starts the text just after the logo block", () => {
+    for (const width of [1495, 1840, 2200]) {
+      const layout = computeLabelLayout(width, 3);
+      expect(layout.model.x).toBeCloseTo(650 * layout.squeeze);
+      expect(layout.features[0].x).toBeCloseTo(653 * layout.squeeze);
+    }
+  });
+
+  it("lays out every size the editor allows with room for the text", () => {
+    for (let width = LABEL_SIZE_LIMITS.widthMm.min; width <= LABEL_SIZE_LIMITS.widthMm.max; width += 10) {
+      for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 1) {
         const size = clampLabelSize({ widthMm: width, heightMm: height });
         const layout = computeLabelLayout(designWidth(size), 3);
-        expect(layout.model.maxWidth).toBeGreaterThan(500);
-        layout.features.forEach((slot) => expect(slot.maxWidth).toBeGreaterThan(130));
+        expect(layout.model.maxWidth).toBeGreaterThan(600);
+        layout.features.forEach((slot) => expect(slot.maxWidth).toBeGreaterThan(165));
       }
     }
   });
@@ -109,8 +139,8 @@ describe("text fitting", () => {
   });
 
   it("shrinks text that is too wide for a narrow label", () => {
-    const narrow = computeLabelLayout(1840, 3).model.maxWidth;
-    const model = "Endorphin Speed 5 Women's Edition";
+    const narrow = computeLabelLayout(1495, 3).model.maxWidth;
+    const model = "M".repeat(34); // the widest letters at the longest length the editor accepts
     const fit = fitText(model, { baseSize: modelFontSize(model), maxWidth: narrow, weight: 800, letterSpacing: -1.1 });
     expect(fit.fontSize).toBeLessThan(modelFontSize(model));
     expect(estimateTextWidth(model, fit.fontSize, 800, -1.1) <= narrow || fit.textLength !== undefined).toBe(true);

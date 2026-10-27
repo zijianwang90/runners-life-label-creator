@@ -280,6 +280,12 @@ button { border: 0; }
 .size-number { display: flex; align-items: center; gap: 4px; color: #85888f; font-size: 10px; }
 .size-number input { width: 100%; height: 30px; padding: 0 6px; text-align: right; color: #1d1f23; background: #fff; border: 1px solid #d3d5d9; border-radius: 5px; outline: 0; font-weight: 700; }
 .size-number input:focus { border-color: #93979f; box-shadow: 0 0 0 3px rgba(30, 32, 37, .05); }
+.text-presets { display: flex; gap: 6px; margin: 4px 0 2px 88px; }
+.text-presets button { padding: 4px 9px; color: #50535a; background: #fff; border: 1px solid #d9dade; border-radius: 12px; font-size: 10px; font-weight: 700; }
+.text-presets button:hover { background: #f0f0f1; }
+.text-presets button.is-current { color: #fff; background: var(--red); border-color: var(--red); }
+.size-readout { margin: 8px 0 0; color: #50535a; font-size: 10.5px; line-height: 1.5; }
+.size-readout strong { color: #111216; }
 .size-notice { margin: 8px 0 0; padding: 8px 10px; display: flex; align-items: flex-start; gap: 7px; color: #7a4a00; background: #fff7e6; border: 1px solid #f1dba8; border-radius: 6px; font-size: 10.5px; line-height: 1.5; animation: toast-in 180ms ease-out; }
 .size-notice svg { flex: 0 0 auto; margin-top: 2px; }
 .size-note { margin: 7px 0 0; color: #8f929a; font-size: 9px; line-height: 1.5; }

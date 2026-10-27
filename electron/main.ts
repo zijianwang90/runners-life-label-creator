@@ -1,7 +1,7 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell, type WebContentsPrintOptions } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from "electron";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { SAVE_PDF_PRINTER, type AppData, type LabelSize, type PrintPayload, type PrintResult, type PrinterInfoLite } from "../src/types";
+import type { AppData, LabelSize, PrintPayload, PrintResult } from "../src/types";
 import { clampLabelSize } from "../src/utils/labelSize";
 import { Updater } from "./updater";
 
@@ -90,28 +90,6 @@ function createMainWindow(): void {
 // The payload comes from the renderer; never trust it for the physical page size.
 const payloadLabelSize = (payload: PrintPayload): LabelSize => clampLabelSize(payload.labelSize);
 
-function printOptions(payload: PrintPayload): WebContentsPrintOptions {
-  const base: WebContentsPrintOptions = {
-    silent: !payload.useSystemDialog,
-    printBackground: true,
-    color: true,
-    margins: { marginType: "none" },
-    scaleFactor: 100,
-    copies: 1,
-    collate: true
-  };
-  if (payload.printerName) base.deviceName = payload.printerName;
-  if (payload.mode === "custom") {
-    const size = payloadLabelSize(payload);
-    base.pageSize = { width: Math.round(size.widthMm * 1000), height: Math.round(size.heightMm * 1000) };
-    base.landscape = false;
-  } else {
-    base.pageSize = "A4";
-    base.landscape = true;
-  }
-  return base;
-}
-
 function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
   const size = payloadLabelSize(payload);
   return {
@@ -127,11 +105,31 @@ function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
   };
 }
 
-function pdfDefaultName(payload: PrintPayload): string {
-  if (payload.kind === "calibration") return `runners-life-calibration-${payload.mode}.pdf`;
+// The PDFs the app opens for printing live in the system temp folder; old ones are swept away on the next print.
+const pdfFolder = () => path.join(app.getPath("temp"), "runners-life-label-creator");
+const PDF_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function pdfFileName(payload: PrintPayload): string {
+  // The timestamp keeps every file unique, so one a PDF viewer still has open is never overwritten.
+  const stamp = new Date().toISOString().replace(/\..*$/, "").replace(/[-:]/g, "").replace("T", "-");
+  if (payload.kind === "calibration") return `runners-life-calibration-${payload.mode}-${stamp}.pdf`;
   const model = payload.labels.length === 1 ? payload.labels[0].model.trim() : "selected-labels";
   const safeModel = (model || "shoe-labels").replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replace(/\s+/g, "-").slice(0, 80);
-  return `runners-life-${safeModel}.pdf`;
+  return `runners-life-${safeModel}-${stamp}.pdf`;
+}
+
+async function removeOldPdfs(): Promise<void> {
+  try {
+    const folder = pdfFolder();
+    for (const name of await fs.readdir(folder)) {
+      if (!name.toLowerCase().endsWith(".pdf")) continue;
+      const file = path.join(folder, name);
+      const { mtimeMs } = await fs.stat(file);
+      if (Date.now() - mtimeMs > PDF_MAX_AGE_MS) await fs.unlink(file);
+    }
+  } catch {
+    // Clean-up is best effort; a locked or missing file must never get in the way of printing.
+  }
 }
 
 async function runPrint(payload: PrintPayload): Promise<PrintResult> {
@@ -163,28 +161,23 @@ async function runPrint(payload: PrintPayload): Promise<PrintResult> {
 
     const onReady = async (event: Electron.IpcMainEvent, readyJobId: string) => {
       if (readyJobId !== jobId || event.sender.id !== printWindow.webContents.id) return;
-      if (payload.printerName === SAVE_PDF_PRINTER) {
-        try {
-          const saveResult = await dialog.showSaveDialog(mainWindow ?? printWindow, {
-            title: payload.kind === "calibration" ? "Save calibration PDF" : "Save label PDF",
-            defaultPath: pdfDefaultName(payload),
-            filters: [{ name: "PDF document", extensions: ["pdf"] }]
-          });
-          if (saveResult.canceled || !saveResult.filePath) {
-            finish({ success: false, reason: "PDF save cancelled." });
-            return;
-          }
-          const pdf = await printWindow.webContents.printToPDF(pdfOptions(payload));
-          await fs.writeFile(saveResult.filePath, pdf);
-          finish({ success: true, outputPath: saveResult.filePath });
-        } catch (error) {
-          finish({ success: false, reason: error instanceof Error ? error.message : "Unable to save the PDF." });
+      try {
+        const pdf = await printWindow.webContents.printToPDF(pdfOptions(payload));
+        await removeOldPdfs();
+        await fs.mkdir(pdfFolder(), { recursive: true });
+        const filePath = path.join(pdfFolder(), pdfFileName(payload));
+        await fs.writeFile(filePath, pdf);
+        // openPath resolves to an error message, or an empty string once the default PDF viewer has been launched.
+        const openError = await shell.openPath(filePath);
+        if (openError) {
+          shell.showItemInFolder(filePath);
+          finish({ success: false, reason: `The PDF was created but could not be opened (${openError}). It is in ${pdfFolder()}.` });
+          return;
         }
-        return;
+        finish({ success: true, outputPath: filePath });
+      } catch (error) {
+        finish({ success: false, reason: error instanceof Error ? error.message : "Unable to create the PDF." });
       }
-      printWindow.webContents.print(printOptions(payload), (success, failureReason) => {
-        finish(success ? { success: true } : { success: false, reason: failureReason });
-      });
     };
 
     const timeout = setTimeout(() => finish({ success: false, reason: "Print preview timed out." }), 60000);
@@ -218,20 +211,6 @@ app.whenReady().then(() => {
   ipcMain.handle("data:save", (_event, data: AppData) => {
     saveQueue = saveQueue.catch(() => undefined).then(() => saveStoredData(data));
     return saveQueue;
-  });
-  ipcMain.handle("printers:list", async (event): Promise<PrinterInfoLite[]> => {
-    const printers = await event.sender.getPrintersAsync();
-    return printers.map((printer) => {
-      const options = printer.options as Record<string, unknown>;
-      const rawDefault = options.isDefault ?? options["printer-is-default"];
-      return {
-        name: printer.name,
-        displayName: printer.displayName || printer.name,
-        description: printer.description || "",
-        status: Number(options.status) || 0,
-        isDefault: rawDefault === true || rawDefault === "true" || rawDefault === "1"
-      };
-    });
   });
   ipcMain.handle("print:run", (_event, payload: PrintPayload) => runPrint(payload));
 

@@ -29,6 +29,13 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run package:win
+      - name: Zip the portable folder
+        # The unpacked app in one zip: unzip it anywhere and run it. Copies of it update by overwriting their own folder.
+        shell: pwsh
+        run: |
+          $name = "Runners-Life-Label-Creator-Portable"
+          Copy-Item "release/windows/win-unpacked" "release/windows/$name" -Recurse
+          Compress-Archive -Path "release/windows/$name" -DestinationPath "release/windows/$name-x64.zip" -CompressionLevel Optimal
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -36,6 +43,7 @@ jobs:
           path: |
             release/windows/Runners-Life-Label-Creator-Setup-*.exe
             release/windows/Runners-Life-Label-Creator-Portable-*.exe
+            release/windows/Runners-Life-Label-Creator-Portable-*.zip
 
   macos:
     runs-on: macos-latest

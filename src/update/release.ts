@@ -134,6 +134,7 @@ export function parseRelease(json: unknown, repo: GithubRepo): ReleaseInfo {
 
 const ASSET_PATTERNS: Record<Exclude<UpdateChannel, "manual">, RegExp> = {
   portable: /portable.*\.exe$/i,
+  folder: /portable.*\.zip$/i,
   installer: /setup.*\.exe$/i
 };
 
@@ -178,7 +179,8 @@ export interface ChannelProbe {
 export function detectUpdateChannel({ platform, isPackaged, portableFile, hasUninstaller }: ChannelProbe): UpdateChannel {
   if (platform !== "win32" || !isPackaged) return "manual";
   if (portableFile) return "portable";
-  return hasUninstaller ? "installer" : "manual";
+  // Neither the single-file launcher nor Setup: an unpacked app folder, which is what the portable zip extracts to.
+  return hasUninstaller ? "installer" : "folder";
 }
 
 export function formatBytes(bytes: number): string {
