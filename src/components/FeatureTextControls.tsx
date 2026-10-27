@@ -16,7 +16,8 @@ const PRESETS = [100, 130, 150, 170] as const;
 const toScale = (percent: number) => clampFeatureScale(percent / 100);
 
 /** One size for the three selling points on every label, with the printed text height shown in points. */
-export function FeatureTextControls({ scale, heightMm, onChange }: FeatureTextControlsProps) {
+export function FeatureTextControls({ scale: requestedScale, heightMm, onChange }: FeatureTextControlsProps) {
+  const scale = clampFeatureScale(requestedScale);
   const percent = Math.round(scale * 100);
   const [draft, setDraft] = useState(String(percent));
   const editing = useRef(false);
@@ -27,10 +28,11 @@ export function FeatureTextControls({ scale, heightMm, onChange }: FeatureTextCo
 
   const printed = featureTextPrintSize(scale, heightMm);
 
-  const settle = () => {
+  // Reads the text from the input itself, so leaving the field right after typing never uses a stale draft.
+  const settle = (text: string) => {
     editing.current = false;
-    const parsed = Number(draft);
-    if (draft.trim() === "" || !Number.isFinite(parsed)) { setDraft(String(percent)); return; }
+    const parsed = Number(text);
+    if (text.trim() === "" || !Number.isFinite(parsed)) { setDraft(String(percent)); return; }
     const next = toScale(parsed);
     setDraft(String(Math.round(next * 100)));
     onChange(next);
@@ -76,7 +78,7 @@ export function FeatureTextControls({ scale, heightMm, onChange }: FeatureTextCo
               const parsed = Number(event.target.value);
               if (event.target.value.trim() !== "" && parsed >= MIN_PERCENT && parsed <= MAX_PERCENT) onChange(toScale(parsed));
             }}
-            onBlur={settle}
+            onBlur={(event) => settle(event.currentTarget.value)}
             onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
           />
           <span>%</span>

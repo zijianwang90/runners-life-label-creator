@@ -37,9 +37,10 @@ function SizeField({ dimension, value, isHarmless, onCommit }: SizeFieldProps) {
     if (!editing.current) setDraft(formatMm(value));
   }, [value]);
 
-  const settle = () => {
+  // Reads the text from the input itself, so leaving the field right after typing never uses a stale draft.
+  const settle = (text: string) => {
     editing.current = false;
-    const parsed = parse(draft);
+    const parsed = parse(text);
     if (parsed === null) { setDraft(formatMm(value)); return; }
     const clamped = Math.min(range.max, Math.max(range.min, parsed));
     setDraft(formatMm(clamped));
@@ -78,7 +79,7 @@ function SizeField({ dimension, value, isHarmless, onCommit }: SizeFieldProps) {
             // must not push the other dimension around on the way; anything that would adjust it waits for Enter/blur.
             if (parsed !== null && parsed >= range.min && parsed <= range.max && isHarmless(parsed)) onCommit(parsed);
           }}
-          onBlur={settle}
+          onBlur={(event) => settle(event.currentTarget.value)}
           onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
         />
         <span>mm</span>

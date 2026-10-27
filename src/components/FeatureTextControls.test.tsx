@@ -55,6 +55,12 @@ describe("selling point text controls", () => {
     expect(field("Selling point text size in percent").value).toBe("80");
   });
 
+  it("shows the approved size when it is given no usable value", () => {
+    render(<FeatureTextControls scale={undefined as unknown as number} heightMm={23} onChange={() => undefined} />);
+    expect(field("Selling point text size slider").value).toBe("100");
+    expect(field("Selling point text size in percent").value).toBe("100");
+  });
+
   it("goes back to the approved size on reset", () => {
     render(<Harness initial={1.4} />);
     fireEvent.click(screen.getByRole("button", { name: /reset to 100%/i }));
