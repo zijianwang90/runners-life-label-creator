@@ -208,7 +208,7 @@ export default function App() {
         calibration: data.settings.calibration
       });
       if (result.success) {
-        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} saved as a PDF — it is selected in the folder that just opened. Drag it into Chrome to print.`, "success");
+        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} saved as a PDF — it is selected in the folder that just opened. Drag it into Chrome and print with Scale set to Actual size.`, "success");
         if (kind === "labels") {
           setPrintOpen(false);
           setSelectedIds(new Set());

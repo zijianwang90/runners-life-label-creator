@@ -91,8 +91,10 @@ describe("label layout at other sizes", () => {
       for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 1) {
         const size = clampLabelSize({ widthMm: width, heightMm: height });
         const layout = computeLabelLayout(designWidth(size), 3);
-        expect(layout.model.maxWidth).toBeGreaterThan(600);
-        layout.features.forEach((slot) => expect(slot.maxWidth).toBeGreaterThan(165));
+        // The squarest shape, 180 × 30 mm, has the least room in design units (583 and 158), but its taller
+        // label makes every unit larger: the middle slot is 20.6 mm wide, more than 18.5 mm at 160 × 24.6 mm.
+        expect(layout.model.maxWidth).toBeGreaterThan(580);
+        layout.features.forEach((slot) => expect(slot.maxWidth).toBeGreaterThan(155));
       }
     }
   });

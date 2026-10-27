@@ -86,7 +86,7 @@ export function PrintDialog(props: PrintDialogProps) {
             </label>
           </fieldset>
 
-          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Saves a PDF, then you print</strong><small>The PDF is shown selected in its folder. Drag it into Chrome, choose your printer and print at 100% / Actual size (not “Fit to page”).</small></span></div>
+          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Saves a PDF, then you print</strong><small>The PDF is shown selected in its folder. Drag it into Chrome and choose your printer. Then open <b>More settings → Scale</b> and pick <b>Actual size</b>: Chrome’s default, “Fit to printable area”, prints everything about 6% smaller (a 170 mm label comes out near 160 mm).</small></span></div>
 
           <details className="calibration-box">
             <summary><Ruler size={17} /> Printer calibration</summary>

@@ -7,12 +7,12 @@ export const DEFAULT_LABEL_SIZE: LabelSize = { widthMm: 220, heightMm: 23 };
  * Width and height are limited individually, and also together. The label is drawn on a fixed
  * 230-unit-tall canvas whose width follows the aspect ratio. A label that is too square leaves no room
  * for the model name and selling points, even after the logo and price blocks have been narrowed, so
- * the shape is kept between 6.5:1 and 10.5:1. (160 × 30 mm would be 5.3:1, which cannot be laid out.)
+ * the shape is kept between 6:1 (e.g. 180 × 30 mm) and 10.5:1. (160 × 30 mm would be 5.3:1, which cannot be laid out.)
  */
 export const LABEL_SIZE_LIMITS = {
   widthMm: { min: 160, max: 240 },
   heightMm: { min: 23, max: 30 },
-  aspect: { min: 6.5, max: 10.5 }
+  aspect: { min: 6, max: 10.5 }
 } as const;
 
 /**

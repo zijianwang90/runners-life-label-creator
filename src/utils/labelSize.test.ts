@@ -40,9 +40,11 @@ describe("label size limits", () => {
 
   it("moves the other dimension when the aspect ratio would break", () => {
     // 160 × 30 mm is 5.3:1, too square to lay out. If the height is what the user chose, the width grows...
-    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "heightMm")).toEqual({ widthMm: 195, heightMm: 30 });
+    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "heightMm")).toEqual({ widthMm: 180, heightMm: 30 });
     // ...and if the width is what they chose, the height gives way instead.
-    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "widthMm")).toEqual({ widthMm: 160, heightMm: 24.6 });
+    expect(clampLabelSize({ widthMm: 160, heightMm: 30 }, "widthMm")).toEqual({ widthMm: 160, heightMm: 26.6 });
+    // 180 × 30 mm, 6:1, is the squarest label allowed.
+    expect(clampLabelSize({ widthMm: 180, heightMm: 30 }, "heightMm")).toEqual({ widthMm: 180, heightMm: 30 });
   });
 
   it("allows the whole range that was asked for where the shape is valid", () => {
@@ -73,8 +75,8 @@ describe("label size limits", () => {
     // The approved size sits well inside the shape limits, so nothing is held back.
     expect(labelSizeRanges(DEFAULT_LABEL_SIZE)).toEqual({ widthMm: { min: 160, max: 240 }, heightMm: { min: 23, max: 30 } });
     // Narrow labels cannot be tall, and tall labels cannot be narrow.
-    expect(labelSizeRanges({ widthMm: 160, heightMm: 23 }).heightMm).toEqual({ min: 23, max: 24.6 });
-    expect(labelSizeRanges({ widthMm: 240, heightMm: 30 }).widthMm).toEqual({ min: 195, max: 240 });
+    expect(labelSizeRanges({ widthMm: 160, heightMm: 23 }).heightMm).toEqual({ min: 23, max: 26.6 });
+    expect(labelSizeRanges({ widthMm: 240, heightMm: 30 }).widthMm).toEqual({ min: 180, max: 240 });
   });
 
   it("formats sizes without trailing zeros", () => {
@@ -90,14 +92,14 @@ describe("editing one dimension", () => {
 
   it("keeps what was typed and adjusts the other dimension when the aspect ratio would break", () => {
     // 170 mm wide cannot be 30 mm tall (5.7:1): the height gives way.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 30 }, "widthMm", 170)).toEqual({ size: { widthMm: 170, heightMm: 26.1 }, adjusted: "heightMm" });
-    // 30 mm tall needs at least 195 mm of width.
-    expect(changeLabelSize({ widthMm: 180, heightMm: 25 }, "heightMm", 30)).toEqual({ size: { widthMm: 195, heightMm: 30 }, adjusted: "widthMm" });
+    expect(changeLabelSize({ widthMm: 200, heightMm: 30 }, "widthMm", 170)).toEqual({ size: { widthMm: 170, heightMm: 28.3 }, adjusted: "heightMm" });
+    // 30 mm tall needs at least 180 mm of width.
+    expect(changeLabelSize({ widthMm: 170, heightMm: 25 }, "heightMm", 30)).toEqual({ size: { widthMm: 180, heightMm: 30 }, adjusted: "widthMm" });
   });
 
   it("applies the fixed limits to the edited value first", () => {
     // 150 mm is below the 160 mm minimum: it becomes 160, and the height follows from that.
-    expect(changeLabelSize({ widthMm: 200, heightMm: 25 }, "widthMm", 150)).toEqual({ size: { widthMm: 160, heightMm: 24.6 }, adjusted: "heightMm" });
+    expect(changeLabelSize({ widthMm: 200, heightMm: 28 }, "widthMm", 150)).toEqual({ size: { widthMm: 160, heightMm: 26.6 }, adjusted: "heightMm" });
   });
 
   it("does not report an adjustment when the other value is already right", () => {

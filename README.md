@@ -9,7 +9,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - Add labels to a print cart, review every selected label, and set an independent print quantity before printing.
 - Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
 - Everything is saved automatically on this computer; there is nothing to import or export.
-- **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6.5:1–10.5:1, the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
+- **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6:1–10.5:1 (so 180 × 30 mm is the squarest), the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
 - **Text size**: separate sliders for the model name, selling points, price, the struck-through regular price on sale labels, and the SALE seal. 100% is the shop standard (model 130%, selling points 150%, price 120% of the original approved design); each can go smaller or larger (model and selling points 60–130%, price 70–115%, regular price 65–130%, seal 80–120%). Each shows its print size; text too long for its space still shrinks to fit.
 - **Sale %**: type a discount (e.g. 25) instead of a sale price and the sale price is worked out to the cent; typing a sale price updates the percent.
 - **AI selling points**: tick labels, click `AI selling points`, copy the generated prompt into any AI tool (ChatGPT, Claude, Gemini…), paste its reply back and review it. Each label gets three selling points: shoe type (race / stability / neutral…), heel-to-toe drop, and the midsole foam technology (the brand's official foam name, e.g. PWRRUN PB, never marketing wording). Low-confidence answers are unticked and flagged so specs can be checked before printing.
@@ -96,7 +96,7 @@ Tick **Publish as a pre-release** to try a release first: the updater ignores pr
 
 1. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
 2. Click **Create PDF to print**. The PDF is shown selected in File Explorer / Finder; drag it into Chrome, choose your printer and print.
-3. In the viewer's print dialog, set the scale to 100% / Actual size — not “Fit to page” or “Shrink to fit” — and leave the margins at their defaults.
+3. In Chrome's print dialog open **More settings → Scale** and choose **Actual size**. Chrome's default for PDFs, *Fit to printable area*, shrinks the whole page by about 6% (a 170 × 25 mm label prints near 160 × 23 mm). Leave the margins at their defaults.
 4. Open the calibration PDF, print it, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
 
 The PDFs are written to the system temp folder (`runners-life-label-creator`) and removed after about a week. To keep one, copy it out of that folder.

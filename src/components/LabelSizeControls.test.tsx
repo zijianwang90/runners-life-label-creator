@@ -36,16 +36,16 @@ describe("label size controls", () => {
     fireEvent.change(field("Width slider"), { target: { value: "170" } });
 
     expect(field("Width in millimetres").value).toBe("170");
-    expect(field("Height in millimetres").value).toBe("26.1");
-    expect(screen.getByRole("status").textContent).toContain("Height changed from 30 to 26.1 mm");
-    expect(screen.getByRole("status").textContent).toContain("6.5:1 and 10.5:1");
+    expect(field("Height in millimetres").value).toBe("28.3");
+    expect(screen.getByRole("status").textContent).toContain("Height changed from 30 to 28.3 mm");
+    expect(screen.getByRole("status").textContent).toContain("6:1 and 10.5:1");
   });
 
   it("adjusts the width when the height is raised past what the width allows", () => {
-    render(<Harness initial={{ widthMm: 180, heightMm: 25 }} />);
+    render(<Harness initial={{ widthMm: 170, heightMm: 25 }} />);
     fireEvent.change(field("Height slider"), { target: { value: "30" } });
-    expect(field("Width in millimetres").value).toBe("195");
-    expect(screen.getByRole("status").textContent).toContain("Width changed from 180 to 195 mm");
+    expect(field("Width in millimetres").value).toBe("180");
+    expect(screen.getByRole("status").textContent).toContain("Width changed from 170 to 180 mm");
   });
 
   it("applies a typed number that moves nothing else straight away", () => {
@@ -57,16 +57,16 @@ describe("label size controls", () => {
 
   it("waits for Enter or blur before a typed number moves the other value, so typing does not jump around", () => {
     render(<Harness initial={{ widthMm: 200, heightMm: 30 }} />);
-    // On the way to "185" the field passes through values that would otherwise re-shape the height.
-    type("Width in millimetres", "180");
+    // On the way to "165" the field passes through values that would otherwise re-shape the height.
+    type("Width in millimetres", "170");
     expect(field("Height in millimetres").value).toBe("30");
-    type("Width in millimetres", "185");
+    type("Width in millimetres", "165");
     expect(field("Height in millimetres").value).toBe("30");
 
     fireEvent.blur(field("Width in millimetres"));
-    expect(field("Width in millimetres").value).toBe("185");
-    expect(field("Height in millimetres").value).toBe("28.4");
-    expect(screen.getByRole("status").textContent).toContain("Height changed from 30 to 28.4 mm");
+    expect(field("Width in millimetres").value).toBe("165");
+    expect(field("Height in millimetres").value).toBe("27.5");
+    expect(screen.getByRole("status").textContent).toContain("Height changed from 30 to 27.5 mm");
   });
 
   it("clamps a number typed outside the fixed limits", () => {
