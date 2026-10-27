@@ -14,7 +14,7 @@ import { validateShoe } from "./utils/labels";
 import { formatLabelSize } from "./utils/labelSize";
 import { useUpdater } from "./update/useUpdater";
 
-const appIconUrl = "/app-icon.svg";
+const appIconUrl = `${import.meta.env.BASE_URL}app-icon.svg`;
 
 type SaveState = "loading" | "saving" | "saved" | "error";
 
