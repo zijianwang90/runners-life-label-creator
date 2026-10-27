@@ -97,7 +97,7 @@ Tick **Publish as a pre-release** to try a release first: the updater ignores pr
 
 1. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
 2. Click **Create PDF to print**. The PDF is shown selected in File Explorer / Finder; drag it into Chrome, choose your printer and print.
-3. In Chrome's print dialog open **More settings → Scale** and choose **Actual size**. Chrome's default for PDFs, *Fit to printable area*, shrinks the whole page by about 6% (a 170 × 25 mm label prints near 160 × 23 mm). Leave the margins at their defaults.
+3. In Chrome's print dialog open **More settings → Scale** and choose **Default** (prints the PDF at 100%). *Fit to printable area* or *Fit to paper* shrinks the whole page by about 6% (a 170 × 25 mm label prints near 160 × 23 mm). For the A4 layout, check that Paper size is A4, not Letter. Leave the margins at their defaults.
 4. Open the calibration PDF, print it, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.
 
 The PDFs are written to the system temp folder (`runners-life-label-creator`) and removed after about a week. To keep one, copy it out of that folder.
