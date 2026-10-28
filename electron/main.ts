@@ -21,6 +21,23 @@ function appIconPath(): string {
     : path.join(app.getAppPath(), "build", "icon.png");
 }
 
+/**
+ * The portable exe runs the app from a temp folder that it deletes on exit (and renames on every
+ * build), so a taskbar pin made from the running window would point there and lose its icon.
+ * Pin the exe the user actually launched instead, with its own icon.
+ */
+function pinToStableExe(window: BrowserWindow): void {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  const exe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  window.setAppDetails({
+    appId: APP_ID,
+    appIconPath: exe,
+    appIconIndex: 0,
+    relaunchCommand: `"${exe}"`,
+    relaunchDisplayName: "Runners Life Label Creator"
+  });
+}
+
 async function loadStoredData(): Promise<AppData | null> {
   try {
     const raw = await fs.readFile(dataFilePath(), "utf8");
@@ -72,6 +89,7 @@ function createMainWindow(): void {
       sandbox: true
     }
   });
+  pinToStableExe(mainWindow);
 
   mainWindow.once("ready-to-show", () => mainWindow?.show());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
