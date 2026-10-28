@@ -217,6 +217,11 @@ button { border: 0; }
 .spec-field { position: relative; }
 .spec-field input { padding-right: 34px; }
 .field .spec-unit { position: absolute; right: 10px; bottom: 10px; color: #9a9da4; font-size: 11px; font-style: normal; font-weight: 700; pointer-events: none; }
+.cart-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e2e3e6; }
+.cart-row-label { display: inline-flex; align-items: center; gap: 5px; color: #5f6269; font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; }
+.cart-row.in-cart .cart-row-label { color: var(--red); }
+.cart-row .quantity-stepper { width: 112px; }
+.cart-row-button { height: 36px; }
 .feature-field { position: relative; }
 .feature-field > span { position: absolute; z-index: 1; left: 8px; top: 26px; color: #fff; width: 18px; height: 18px; display: grid; place-content: center; border-radius: 3px; background: var(--red); font-size: 9px; }
 .feature-field input { padding-left: 33px; }

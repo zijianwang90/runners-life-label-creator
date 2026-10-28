@@ -1,17 +1,19 @@
-import { FileDown, Minus, Plus, Printer, Ruler, Trash2, X } from "lucide-react";
+import { FileDown, Printer, Ruler, Trash2, X } from "lucide-react";
 import type { AppSettings, ShoeLabel } from "../types";
 import { expandLabelCopies } from "../utils/labels";
 import { a4Layout, formatLabelSize } from "../utils/labelSize";
 import { LabelSvg, labelScaleProps } from "./LabelSvg";
+import { QuantityStepper } from "./QuantityStepper";
 
 interface PrintDialogProps {
   open: boolean;
+  /** The print list, each label's copies as its `quantity`. */
   shoes: ShoeLabel[];
   settings: AppSettings;
   printing: boolean;
   onClose: () => void;
-  onShoesChange: (shoes: ShoeLabel[]) => void;
-  onRemoveFromSelection: (id: string) => void;
+  onCopiesChange: (id: string, copies: number) => void;
+  onRemove: (id: string) => void;
   onSettingsChange: (settings: AppSettings) => void;
   onPrint: () => void;
   onCalibrationPrint: () => void;
@@ -26,14 +28,6 @@ export function PrintDialog(props: PrintDialogProps) {
   const update = (patch: Partial<AppSettings>) => props.onSettingsChange({ ...props.settings, ...patch });
   const updateCalibration = (patch: Partial<AppSettings["calibration"]>) => update({ calibration: { ...props.settings.calibration, ...patch } });
   const number = (value: string, fallback: number) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-  const setQuantity = (id: string, quantity: number) => {
-    const safeQuantity = Math.max(1, Math.min(99, Math.round(quantity) || 1));
-    props.onShoesChange(props.shoes.map((shoe) => shoe.id === id ? { ...shoe, quantity: safeQuantity } : shoe));
-  };
-  const remove = (id: string) => {
-    props.onShoesChange(props.shoes.filter((shoe) => shoe.id !== id));
-    props.onRemoveFromSelection(id);
-  };
 
   return (
     <div className="modal-backdrop" onMouseDown={props.onClose}>
@@ -52,7 +46,7 @@ export function PrintDialog(props: PrintDialogProps) {
         <div className="modal-body">
           <section className="print-cart-section">
             <div className="section-heading">
-              <div><span className="eyebrow">SELECTED LABELS</span><h3>Print cart</h3></div>
+              <div><span className="eyebrow">WAITING TO PRINT</span><h3>Print list</h3></div>
               <span>{props.shoes.length} model{props.shoes.length === 1 ? "" : "s"}</span>
             </div>
             <div className="print-cart-list">
@@ -61,16 +55,12 @@ export function PrintDialog(props: PrintDialogProps) {
                   <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} {...labelScaleProps(props.settings)} /></div>
                   <div className="cart-item-controls">
                     <span>Copies</span>
-                    <div className="quantity-stepper">
-                      <button type="button" aria-label={`Decrease ${shoe.model} copies`} disabled={shoe.quantity <= 1} onClick={() => setQuantity(shoe.id, shoe.quantity - 1)}><Minus size={15} /></button>
-                      <input aria-label={`${shoe.model} print copies`} type="number" min="1" max="99" value={shoe.quantity} onChange={(event) => setQuantity(shoe.id, Number(event.target.value))} />
-                      <button type="button" aria-label={`Increase ${shoe.model} copies`} disabled={shoe.quantity >= 99} onClick={() => setQuantity(shoe.id, shoe.quantity + 1)}><Plus size={15} /></button>
-                    </div>
-                    <button className="remove-cart-item" type="button" onClick={() => remove(shoe.id)}><Trash2 size={14} /> Remove</button>
+                    <QuantityStepper value={shoe.quantity} name={shoe.model} onChange={(copies) => props.onCopiesChange(shoe.id, copies)} />
+                    <button className="remove-cart-item" type="button" onClick={() => props.onRemove(shoe.id)}><Trash2 size={14} /> Remove</button>
                   </div>
                 </article>
               ))}
-              {props.shoes.length === 0 && <div className="empty-print-cart">No labels selected. Close this window and add shoes to the print cart.</div>}
+              {props.shoes.length === 0 && <div className="empty-print-cart">The print list is empty. Close this window, choose the copies on a label and click Add to print list.</div>}
             </div>
           </section>
 

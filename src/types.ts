@@ -63,9 +63,17 @@ export interface AppSettings {
   calibration: CalibrationSettings;
 }
 
+/** One line of the print list: a label and how many copies of it to print. */
+export interface PrintCartItem {
+  id: string;
+  copies: number;
+}
+
 export interface AppData {
   version: 1;
   shoes: ShoeLabel[];
+  /** Labels waiting to be printed, in the order they were added. Emptied once their PDF is made. */
+  printCart: PrintCartItem[];
   settings: AppSettings;
 }
 

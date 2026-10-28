@@ -26,6 +26,7 @@ function Harness({ initial }: { initial: Partial<ShoeLabel> }) {
       shoe={shoe} index={0} selected={false} active canMoveUp={false} canMoveDown={false}
       onSelect={() => undefined} onActivate={() => undefined} onChange={setShoe}
       onDuplicate={() => undefined} onDelete={() => undefined} onMove={() => undefined}
+      cartCopies={null} onAddToCart={() => undefined} onCartCopiesChange={() => undefined} onRemoveFromCart={() => undefined}
     />
   );
 }

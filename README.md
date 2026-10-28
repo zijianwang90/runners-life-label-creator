@@ -7,7 +7,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - Add, duplicate, reorder, search, filter, and delete shoe models; every edit is immediately persisted locally.
 - Edit brand, model, regular price, optional sale price, and zero to three optional selling points.
 - **Specs row** (optional): heel and forefoot stack height, weight and plate (carbon / nylon / TPU / Pebax). Filled-in specs print as a smaller second row under the selling points, e.g. `STACK 39/31 MM • 245 G • CARBON PLATE`; labels without specs look exactly as before.
-- Add labels to a print cart, review every selected label, and set an independent print quantity before printing.
+- **Print list (cart)**: on any label in the list, pick how many copies to print and click `Add to print list` (or tick several labels and add one copy of each). Adding a label that is already on the list adds to its copies. `Print list` shows every waiting label, where copies can still be changed or a label removed, before the PDF is made. The list is saved with your labels and is emptied once its PDF has been created.
 - Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
 - Everything is saved automatically on this computer; there is nothing to import or export.
 - **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6:1–10.5:1 (so 180 × 30 mm is the squarest), the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.

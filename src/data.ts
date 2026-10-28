@@ -1,5 +1,6 @@
 import type { AppData, AppSettings, BrandId, ShoeLabel } from "./types";
 import { BRAND_IDS } from "./types";
+import { normalizeCart } from "./utils/cart";
 import { EMPTY_SPECS, normalizeSpecs } from "./utils/labels";
 import { clampLabelSize, clampTextScale, DEFAULT_LABEL_SIZE, TEXT_SCALE_LIMITS } from "./utils/labelSize";
 
@@ -40,6 +41,7 @@ export function createDefaultData(): AppData {
   return {
     version: 1,
     shoes: [createEmptyShoe()],
+    printCart: [],
     settings: structuredClone(defaultSettings)
   };
 }
@@ -82,6 +84,7 @@ export function normalizeAppData(input: unknown): AppData {
   return {
     version: 1,
     shoes: shoes.length > 0 ? shoes : [createEmptyShoe()],
+    printCart: normalizeCart(candidate.printCart, new Set(shoes.map((shoe) => shoe.id))),
     settings: {
       currencySymbol: typeof rawSettings.currencySymbol === "string" && rawSettings.currencySymbol
         ? rawSettings.currencySymbol.slice(0, 3)

@@ -8,8 +8,9 @@ import { PrintDialog } from "./components/PrintDialog";
 import { SelectionBar } from "./components/SelectionBar";
 import { ShoeEditor } from "./components/ShoeEditor";
 import { UpdateDialog } from "./components/UpdateDialog";
-import type { AppData, AppSettings, BrandId, LabelSize, ShoeLabel, TextScales, UpdateStatus } from "./types";
+import type { AppData, AppSettings, BrandId, LabelSize, PrintCartItem, ShoeLabel, TextScales, UpdateStatus } from "./types";
 import { BRAND_IDS } from "./types";
+import { addToCart, cartCopyCount, cartLabels, removeFromCart, setCartCopies } from "./utils/cart";
 import { validateShoe } from "./utils/labels";
 import { formatLabelSize } from "./utils/labelSize";
 import { useUpdater } from "./update/useUpdater";
@@ -43,7 +44,6 @@ export default function App() {
   const [brandFilter, setBrandFilter] = useState<BrandId | "all">("all");
   const [printOpen, setPrintOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
-  const [printQueue, setPrintQueue] = useState<ShoeLabel[]>([]);
   const [printing, setPrinting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [appVersion, setAppVersion] = useState("1.0.0");
@@ -99,12 +99,17 @@ export default function App() {
     const matchesSearch = !query || shoe.model.toLowerCase().includes(query) || brandNames[shoe.brand].toLowerCase().includes(query);
     return matchesBrand && matchesSearch;
   }), [shoes, brandFilter, search]);
+  const printCart = data?.printCart ?? [];
+  const printQueue = useMemo(() => cartLabels(printCart, shoes), [printCart, shoes]);
+  const cartCopiesById = useMemo(() => new Map(printCart.map((item) => [item.id, item.copies])), [printCart]);
   const selectedShoes = useMemo(() => shoes.filter((shoe) => selectedIds.has(shoe.id)), [shoes, selectedIds]);
   const activeShoe = shoes.find((shoe) => shoe.id === activeId) ?? shoes[0] ?? null;
   const validCount = shoes.filter((shoe) => validateShoe(shoe).valid).length;
   const saleCount = shoes.filter((shoe) => shoe.salePrice !== null && shoe.regularPrice !== null && shoe.salePrice < shoe.regularPrice).length;
 
   const updateShoes = (nextShoes: ShoeLabel[]) => setData((current) => current ? { ...current, shoes: nextShoes } : current);
+  const updateCart = (change: (cart: PrintCartItem[]) => PrintCartItem[]) =>
+    setData((current) => current ? { ...current, printCart: change(current.printCart) } : current);
   const updateSettings = (settings: AppSettings) => setData((current) => current ? { ...current, settings } : current);
   const updateLabelSize = (labelSize: LabelSize) => setData((current) => current ? { ...current, settings: { ...current.settings, labelSize } } : current);
   const updateTextScales = (scales: Partial<TextScales>) => setData((current) => current ? { ...current, settings: { ...current.settings, ...scales } } : current);
@@ -142,6 +147,7 @@ export default function App() {
     const next = shoes.filter((item) => item.id !== id);
     updateShoes(next.length ? next : [createEmptyShoe()]);
     setSelectedIds((current) => { const updated = new Set(current); updated.delete(id); return updated; });
+    updateCart((cart) => removeFromCart(cart, id));
     if (activeId === id) setActiveId(next[0]?.id ?? "");
   };
   const moveShoe = (id: string, direction: -1 | 1) => {
@@ -173,20 +179,39 @@ export default function App() {
     });
   };
 
+  /** A label must be complete before it goes on the print list; otherwise it is highlighted and nothing is added. */
+  const blockIncomplete = (candidates: ShoeLabel[], action: string): boolean => {
+    const invalid = candidates.find((shoe) => !validateShoe(shoe).valid);
+    if (!invalid) return false;
+    setActiveId(invalid.id);
+    showToast(`Complete ${invalid.model || "the highlighted label"} before ${action}.`, "error");
+    return true;
+  };
+
+  const addShoeToCart = (shoe: ShoeLabel, copies: number) => {
+    if (blockIncomplete([shoe], "adding it to the print list")) return;
+    updateCart((cart) => addToCart(cart, shoe.id, copies));
+    showToast(`${copies} × ${shoe.model} added to the print list.`, "success");
+  };
+
+  const addSelectedToCart = () => {
+    const candidates = shoes.filter((shoe) => selectedIds.has(shoe.id));
+    if (candidates.length === 0 || blockIncomplete(candidates, "adding it to the print list")) return;
+    const fresh = candidates.filter((shoe) => !cartCopiesById.has(shoe.id));
+    updateCart((cart) => fresh.reduce((next, shoe) => addToCart(next, shoe.id, 1), cart));
+    setSelectedIds(new Set());
+    const already = candidates.length - fresh.length;
+    showToast(`${fresh.length} label${fresh.length === 1 ? "" : "s"} added to the print list${already ? ` (${already} already on it)` : ""}.`, "success");
+  };
+
   function openPrintDialog() {
     if (!data) return;
-    const candidates = shoes.filter((shoe) => selectedIds.has(shoe.id));
-    if (candidates.length === 0) {
-      showToast("Select at least one shoe label to add it to the print cart.", "info");
+    if (printQueue.length === 0) {
+      showToast("The print list is empty. Choose the copies on a label and click Add to print list.", "info");
       return;
     }
-    const invalid = candidates.find((shoe) => !validateShoe(shoe).valid);
-    if (invalid) {
-      setActiveId(invalid.id);
-      showToast(`Complete ${invalid.model || "the highlighted label"} before printing.`, "error");
-      return;
-    }
-    setPrintQueue(candidates.map((shoe) => ({ ...structuredClone(shoe), quantity: 1 })));
+    // Labels can be edited after they were added, so check again.
+    if (blockIncomplete(printQueue, "printing")) return;
     setPrintOpen(true);
   }
 
@@ -214,8 +239,7 @@ export default function App() {
         showToast(`${kind === "labels" ? "Labels" : "Calibration page"} saved as a PDF — it is selected in the folder that just opened. Drag it into Chrome and print with Scale set to Actual size.`, "success");
         if (kind === "labels") {
           setPrintOpen(false);
-          setSelectedIds(new Set());
-          setPrintQueue([]);
+          updateCart(() => []);
         }
       } else showToast(result.reason || "Could not create the PDF.", "error");
     } catch (error) {
@@ -259,8 +283,11 @@ export default function App() {
             selectedShownCount={filteredShoes.filter((shoe) => selectedIds.has(shoe.id)).length}
             onToggleShown={toggleAllVisible}
             onClear={() => setSelectedIds(new Set())}
+            cartLabels={printQueue.length}
+            cartCopies={cartCopyCount(printCart)}
             onAi={() => setAiOpen(true)}
-            onPrint={() => void openPrintDialog()}
+            onAddSelected={addSelectedToCart}
+            onOpenCart={() => void openPrintDialog()}
           />
 
           <div className="shoe-list">
@@ -283,6 +310,10 @@ export default function App() {
                     onDuplicate={() => duplicateShoe(shoe)}
                     onDelete={() => deleteShoe(shoe.id)}
                     onMove={(direction) => moveShoe(shoe.id, direction)}
+                    cartCopies={cartCopiesById.get(shoe.id) ?? null}
+                    onAddToCart={(copies) => addShoeToCart(shoe, copies)}
+                    onCartCopiesChange={(copies) => updateCart((cart) => setCartCopies(cart, shoe.id, copies))}
+                    onRemoveFromCart={() => updateCart((cart) => removeFromCart(cart, shoe.id))}
                   />
                 </div>
               );
@@ -298,9 +329,9 @@ export default function App() {
         shoes={printQueue}
         settings={data.settings}
         printing={printing}
-        onClose={() => { if (!printing) { setPrintOpen(false); setPrintQueue([]); } }}
-        onShoesChange={setPrintQueue}
-        onRemoveFromSelection={(id) => setSelectedIds((current) => { const next = new Set(current); next.delete(id); return next; })}
+        onClose={() => { if (!printing) setPrintOpen(false); }}
+        onCopiesChange={(id, copies) => updateCart((cart) => setCartCopies(cart, id, copies))}
+        onRemove={(id) => updateCart((cart) => removeFromCart(cart, id))}
         onSettingsChange={updateSettings}
         onPrint={() => void runPrint("labels")}
         onCalibrationPrint={() => void runPrint("calibration")}

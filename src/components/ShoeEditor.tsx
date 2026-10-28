@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Copy, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, ShoppingCart, Trash2, X } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
 import { BRAND_IDS, PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
+import { QuantityStepper } from "./QuantityStepper";
 import { EMPTY_SPECS, getPriceState, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
 
 interface ShoeEditorProps {
@@ -17,6 +18,11 @@ interface ShoeEditorProps {
   onDuplicate: () => void;
   onDelete: () => void;
   onMove: (direction: -1 | 1) => void;
+  /** Copies of this label on the print list; null when it is not on it. */
+  cartCopies: number | null;
+  onAddToCart: (copies: number) => void;
+  onCartCopiesChange: (copies: number) => void;
+  onRemoveFromCart: () => void;
 }
 
 const numericValue = (value: string): number | null => {
@@ -77,6 +83,33 @@ function SalePercentField({ regularPrice, salePrice, onSalePriceChange }: SalePe
   );
 }
 
+interface CartRowProps {
+  name: string;
+  copies: number | null;
+  onAdd: (copies: number) => void;
+  onCopiesChange: (copies: number) => void;
+  onRemove: () => void;
+}
+
+/** Pick how many copies to print and put them on the print list; once there, the stepper edits the list. */
+function CartRow({ name, copies, onAdd, onCopiesChange, onRemove }: CartRowProps) {
+  const [draft, setDraft] = useState(1);
+  const inCart = copies !== null;
+  return (
+    <div className={`cart-row ${inCart ? "in-cart" : ""}`} onClick={(event) => event.stopPropagation()}>
+      <span className="cart-row-label">{inCart ? <><ShoppingCart size={14} /> On the print list</> : "Copies to print"}</span>
+      <QuantityStepper value={copies ?? draft} name={name} onChange={inCart ? onCopiesChange : setDraft} />
+      {inCart ? (
+        <button type="button" className="secondary-button cart-row-button" onClick={onRemove}><X size={15} /> Remove</button>
+      ) : (
+        <button type="button" className="primary-button cart-row-button" onClick={() => { onAdd(draft); setDraft(1); }}>
+          <ShoppingCart size={15} /> Add to print list
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ShoeEditor(props: ShoeEditorProps) {
   const { shoe } = props;
   const validation = validateShoe(shoe);
@@ -107,7 +140,7 @@ export function ShoeEditor(props: ShoeEditorProps) {
           checked={props.selected}
           onChange={(event) => props.onSelect(event.target.checked)}
           onClick={(event) => event.stopPropagation()}
-          aria-label={`Add ${shoe.model || `shoe ${props.index + 1}`} to print cart`}
+          aria-label={`Select ${shoe.model || `shoe ${props.index + 1}`}`}
         />
         <span>{String(props.index + 1).padStart(2, "0")}</span>
       </div>
@@ -205,6 +238,14 @@ export function ShoeEditor(props: ShoeEditorProps) {
           </label>
         </div>
         {validation.fields.specs && <div className="row-error">{validation.fields.specs}</div>}
+
+        <CartRow
+          name={shoe.model || `shoe ${props.index + 1}`}
+          copies={props.cartCopies}
+          onAdd={props.onAddToCart}
+          onCopiesChange={props.onCartCopiesChange}
+          onRemove={props.onRemoveFromCart}
+        />
       </div>
 
       <div className="shoe-card-actions">
