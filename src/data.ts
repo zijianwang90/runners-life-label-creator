@@ -1,5 +1,6 @@
 import type { AppData, AppSettings, BrandId, ShoeLabel } from "./types";
 import { BRAND_IDS } from "./types";
+import { EMPTY_SPECS, normalizeSpecs } from "./utils/labels";
 import { clampLabelSize, clampTextScale, DEFAULT_LABEL_SIZE, TEXT_SCALE_LIMITS } from "./utils/labelSize";
 
 export const defaultSettings: AppSettings = {
@@ -28,6 +29,7 @@ export function createEmptyShoe(brand: BrandId = "saucony"): ShoeLabel {
     regularPrice: null,
     salePrice: null,
     features: ["", "", ""],
+    specs: { ...EMPTY_SPECS },
     quantity: 1,
     createdAt: now,
     updatedAt: now
@@ -68,6 +70,7 @@ export function normalizeAppData(input: unknown): AppData {
       regularPrice: finiteNumberOrNull(shoe.regularPrice),
       salePrice: finiteNumberOrNull(shoe.salePrice),
       features: features as [string, string, string],
+      specs: normalizeSpecs(shoe.specs),
       quantity: Math.min(99, Math.max(1, Math.round(Number(shoe.quantity) || 1))),
       createdAt: typeof shoe.createdAt === "string" ? shoe.createdAt : now,
       updatedAt: typeof shoe.updatedAt === "string" ? shoe.updatedAt : now

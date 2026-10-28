@@ -1,11 +1,55 @@
-import type { PriceState, ShoeLabel } from "../types";
+import { PLATE_TYPES, type PlateType, type PriceState, type ShoeLabel, type ShoeSpecs } from "../types";
 
 export const MAX_FEATURE_LENGTH = 32;
+
+export const EMPTY_SPECS: ShoeSpecs = { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" };
+/** Plausible ranges; values outside them are almost certainly typos (or ounces typed as grams). */
+export const STACK_RANGE_MM = { min: 0, max: 60 } as const;
+export const WEIGHT_RANGE_G = { min: 100, max: 500 } as const;
+
+export const PLATE_NAMES: Record<Exclude<PlateType, "">, string> = {
+  carbon: "Carbon plate",
+  nylon: "Nylon plate",
+  tpu: "TPU plate",
+  pebax: "Pebax plate"
+};
+
+const specNumber = (value: unknown, digits: number): number | null => {
+  if (value === "" || value === null || value === undefined) return null;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 10 ** digits) / 10 ** digits : null;
+};
+
+export function normalizeSpecs(input: unknown): ShoeSpecs {
+  if (!input || typeof input !== "object") return { ...EMPTY_SPECS };
+  const raw = input as Partial<Record<keyof ShoeSpecs, unknown>>;
+  return {
+    heelStackMm: specNumber(raw.heelStackMm, 1),
+    forefootStackMm: specNumber(raw.forefootStackMm, 1),
+    weightG: specNumber(raw.weightG, 0),
+    plate: PLATE_TYPES.includes(raw.plate as Exclude<PlateType, "">) ? (raw.plate as PlateType) : ""
+  };
+}
+
+const mm = (value: number) => String(Math.round(value * 10) / 10);
+
+/** The spec row as the label prints it, one entry per filled-in spec; empty when there is nothing to show. */
+export function specSegments(specs: ShoeSpecs | undefined): string[] {
+  if (!specs) return [];
+  const { heelStackMm: heel, forefootStackMm: forefoot, weightG, plate } = specs;
+  const segments: string[] = [];
+  if (heel !== null && forefoot !== null) segments.push(`Stack ${mm(heel)}/${mm(forefoot)} mm`);
+  else if (heel !== null) segments.push(`Heel stack ${mm(heel)} mm`);
+  else if (forefoot !== null) segments.push(`Forefoot stack ${mm(forefoot)} mm`);
+  if (weightG !== null) segments.push(`${Math.round(weightG)} g`);
+  if (plate) segments.push(PLATE_NAMES[plate]);
+  return segments;
+}
 
 export interface ShoeValidation {
   valid: boolean;
   errors: string[];
-  fields: Partial<Record<"model" | "regularPrice" | "salePrice" | "features" | "quantity", string>>;
+  fields: Partial<Record<"model" | "regularPrice" | "salePrice" | "features" | "specs" | "quantity", string>>;
 }
 
 export function getPriceState(shoe: ShoeLabel): PriceState {
@@ -63,6 +107,14 @@ export function validateShoe(shoe: ShoeLabel): ShoeValidation {
 
   const filledFeatures = shoe.features.map((feature) => feature.trim()).filter(Boolean);
   if (filledFeatures.some((feature) => feature.length > MAX_FEATURE_LENGTH)) fields.features = `Keep each selling point to ${MAX_FEATURE_LENGTH} characters or fewer.`;
+
+  const { heelStackMm, forefootStackMm, weightG } = shoe.specs ?? EMPTY_SPECS;
+  const outOfRange = (value: number | null, range: { min: number; max: number }) => value !== null && (value < range.min || value > range.max);
+  if (outOfRange(heelStackMm, STACK_RANGE_MM) || outOfRange(forefootStackMm, STACK_RANGE_MM)) {
+    fields.specs = `Stack heights are ${STACK_RANGE_MM.min}–${STACK_RANGE_MM.max} mm.`;
+  } else if (outOfRange(weightG, WEIGHT_RANGE_G)) {
+    fields.specs = `Weight is in grams (${WEIGHT_RANGE_G.min}–${WEIGHT_RANGE_G.max} g).`;
+  }
 
   if (!Number.isInteger(shoe.quantity) || shoe.quantity < 1 || shoe.quantity > 99) fields.quantity = "Quantity must be between 1 and 99.";
   errors.push(...Object.values(fields).filter((message): message is string => Boolean(message)));

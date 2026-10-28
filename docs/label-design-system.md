@@ -156,6 +156,15 @@ Optical scale 不是品牌区宽度，而是 Logo 在固定区域内的视觉修
 - `SPEEDROLL TECHNOLOGY`
 - `BUILT FOR TEMPO RUNS`
 
+### 规格行（可选）
+
+- 内容：前后掌堆高、重量、板材，全部可选；任一项有值时才显示，没有值的项不显示。
+- 格式：`STACK 39/31 MM  •  245 G  •  CARBON PLATE`，堆高为“后掌/前掌”；只填一项堆高时显示 `HEEL STACK 39 MM` 或 `FOREFOOT STACK 31 MM`。各项之间用红色圆点分隔。
+- 板材可选 Carbon、Nylon、TPU、Pebax；没有板或不确定时不显示。
+- 字号：18 SVG 单位 × 卖点文字比例（标准 150% 时为 27），字重 600，字色与型号相同；放不下时整行缩小。
+- 有规格行时，三行基线依次为：型号 `y=92`、卖点 `y=144`、规格 `y=193`；没有卖点时为型号 `y=117`、规格 `y=178`。没有规格时，布局与已确认方案完全一致。
+- 合理范围：堆高 0–60 mm，重量 100–500 g，超出时编辑器提示（多半是输入错误，或把盎司当成了克）。
+
 ## 8. 常规价格状态
 
 满足下列任一条件时使用常规价格状态：
@@ -244,6 +253,12 @@ interface ShoeLabelData {
   regularPrice: number;
   salePrice?: number;
   features: [string, string, string]; // 每项可为空，允许全部为空
+  specs: {                             // 可选规格行，每项可为空
+    heelStackMm: number | null;
+    forefootStackMm: number | null;
+    weightG: number | null;
+    plate: "carbon" | "nylon" | "tpu" | "pebax" | "";
+  };
 }
 ```
 

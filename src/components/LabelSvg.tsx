@@ -2,7 +2,7 @@ import { useId } from "react";
 import designTokens from "../../design/label-design-system.json";
 import { brandLogos, runnersLifeLogo } from "../assets";
 import type { LabelSize, ShoeLabel, TextScales } from "../types";
-import { featureFontSize, formatMoney, getPriceState, modelFontSize, moneyParts, savingsAmount } from "../utils/labels";
+import { featureFontSize, formatMoney, getPriceState, modelFontSize, moneyParts, savingsAmount, specSegments } from "../utils/labels";
 import { BASE_DESIGN_WIDTH, computeLabelLayout, DESIGN_HEIGHT, designWidth, estimateTextWidth, fitText } from "../utils/labelLayout";
 import { clampTextScale, DEFAULT_LABEL_SIZE } from "../utils/labelSize";
 
@@ -71,6 +71,19 @@ export const labelScaleProps = (scales: TextScales) => ({
   regularScale: scales.regularPriceTextScale,
   sealScale: scales.saleSealScale
 });
+/** The spec row is a little smaller than the selling points and follows their size slider. */
+const SPEC_BASE_SIZE = 18;
+const SPEC_LETTER_SPACING = 0.6;
+/** Drawn in red between the specs; the spaces around it are part of the separator. */
+const SPEC_SEPARATOR = "  •  ";
+
+/** The spec row's font size: the standard size whenever it fits, otherwise just small enough to fit. */
+function specRowSize(segments: string[], maxWidth: number, featureScale: number): number {
+  const baseSize = round(SPEC_BASE_SIZE * featureScale);
+  const width = estimateTextWidth(segments.join(SPEC_SEPARATOR), baseSize, 600, SPEC_LETTER_SPACING);
+  return width <= maxWidth ? baseSize : Math.floor(((baseSize * maxWidth) / width) * 10) / 10;
+}
+
 const PRICE_POLYGON = [[1730, 0], [2200, 0], [2200, 230], [1668, 230]] as const;
 
 export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, modelScale = 1, featureScale = 1, priceScale = 1, regularScale = 1, sealScale = 1, className = "", title }: LabelSvgProps) {
@@ -82,7 +95,8 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const priceState = getPriceState(shoe);
   const displayedPrice = priceState === "sale" ? shoe.salePrice : shoe.regularPrice;
   const features = shoe.features.map((feature) => feature.trim()).filter(Boolean).slice(0, 3);
-  const layout = computeLabelLayout(designWidth(size), features.length);
+  const specs = specSegments(shoe.specs).map((segment) => segment.toUpperCase());
+  const layout = computeLabelLayout(designWidth(size), features.length, specs.length > 0);
   const textScale = clampTextScale("feature", featureScale);
   const modelTextScale = clampTextScale("model", modelScale);
   const priceTextScale = clampTextScale("price", priceScale);
@@ -94,8 +108,9 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const strikeHalf = round(Math.max(168, estimateTextWidth(regularText, regularSize, 600) + 24) / 2);
   const strikeY = round(45 - (regularSize * 7) / 18);
   // The divider between selling points grows with their text: 140–170 at the approved 21-unit size.
-  const separatorTop = round(162 - 22 * textScale);
-  const separatorBottom = round(162 + 8 * textScale);
+  const separatorTop = round(layout.featureY - 22 * textScale);
+  const separatorBottom = round(layout.featureY + 8 * textScale);
+  const specSize = layout.specs ? specRowSize(specs, layout.specs.maxWidth, textScale) : 0;
   const canvasWidth = round(layout.width);
   const modelText = (shoe.model || "SHOE MODEL").toUpperCase();
   const modelFit = fitText(modelText, {
@@ -219,7 +234,7 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
           <text
             key={`${index}-${feature}`}
             x={round(slot.x)}
-            y="162"
+            y={layout.featureY}
             fill={designTokens.palette.bodyText}
             fontFamily={LABEL_FONT}
             fontSize={fit.fontSize}
@@ -234,6 +249,26 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
       {layout.separatorXs.map((x) => (
         <line key={x} x1={round(x)} y1={separatorTop} x2={round(x)} y2={separatorBottom} stroke={designTokens.palette.runnersLifeRed} strokeWidth="2" />
       ))}
+
+      {layout.specs && (
+        <text
+          x={round(layout.specs.x)}
+          y={layout.specs.y}
+          fill={designTokens.palette.ink}
+          fontFamily={LABEL_FONT}
+          fontSize={specSize}
+          fontWeight="600"
+          letterSpacing={SPEC_LETTER_SPACING}
+          style={{ fontVariantNumeric: "tabular-nums lining-nums", whiteSpace: "pre" }}
+        >
+          {specs.map((segment, index) => (
+            <tspan key={`${index}-${segment}`}>
+              {index > 0 && <tspan fill={designTokens.palette.runnersLifeRed}>{SPEC_SEPARATOR}</tspan>}
+              {segment}
+            </tspan>
+          ))}
+        </text>
+      )}
 
       <polygon points={pricePolygon} fill={`url(#${redGradientId})`} />
       <polygon points={pricePolygon} fill={`url(#${speedPatternId})`} />

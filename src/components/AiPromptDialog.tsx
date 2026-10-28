@@ -1,14 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, ClipboardCheck, Copy, FileUp, Sparkles, TriangleAlert, X } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
-import { featureTooLong, parseSellingPointsReply, type SellingPointRow } from "../ai/parse";
+import { featureTooLong, mergeSpecs, parseSellingPointsReply, type SellingPointRow } from "../ai/parse";
 import { buildSellingPointsPrompt } from "../ai/prompt";
-import type { ShoeLabel } from "../types";
+import { PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
 import { copyToClipboard } from "../utils/clipboard";
-import { MAX_FEATURE_LENGTH } from "../utils/labels";
+import { EMPTY_SPECS, MAX_FEATURE_LENGTH, PLATE_NAMES, specSegments } from "../utils/labels";
 
 type Features = ShoeLabel["features"];
-export interface SellingPointUpdate { id: string; features: Features }
+export interface SellingPointUpdate { id: string; features: Features; specs: ShoeSpecs }
 
 interface AiPromptDialogProps {
   open: boolean;
@@ -23,7 +23,19 @@ interface AiPromptDialogProps {
 const SLOT_LABELS = ["Type", "Drop", "Midsole foam"] as const;
 const SLOT_PLACEHOLDERS = ["Race day", "8mm drop", "PWRRUN PB"] as const;
 
-interface RowEdit { features?: Features; apply?: boolean }
+const SPEC_INPUTS = [
+  { key: "heelStackMm", label: "Heel stack", unit: "mm", step: "0.5" },
+  { key: "forefootStackMm", label: "Forefoot stack", unit: "mm", step: "0.5" },
+  { key: "weightG", label: "Weight", unit: "g", step: "1" }
+] as const;
+
+const numberOrNull = (value: string): number | null => {
+  if (value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+interface RowEdit { features?: Features; specs?: ShoeSpecs; apply?: boolean }
 
 export function AiPromptDialog(props: AiPromptDialogProps) {
   // Mounted only while open, so closing the dialog also clears the pasted reply.
@@ -44,13 +56,15 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
   // Slots the AI could not answer start out with what the label already says, so nothing is wiped by accident.
   const featuresOf = (row: SellingPointRow, shoe: ShoeLabel): Features =>
     edits[row.shoeId]?.features ?? (row.features.map((value, index) => value || shoe.features[index]) as Features);
+  const specsOf = (row: SellingPointRow, shoe: ShoeLabel): ShoeSpecs =>
+    edits[row.shoeId]?.specs ?? mergeSpecs(shoe.specs ?? EMPTY_SPECS, row.specs);
   const isChecked = (row: SellingPointRow) => edits[row.shoeId]?.apply ?? row.confidence !== "low";
 
   const applicable = outcome.rows.flatMap((row) => {
     const shoe = shoeById.get(row.shoeId);
     if (!shoe || !isChecked(row)) return [];
     const features = featuresOf(row, shoe);
-    return features.some(featureTooLong) ? [] : [{ id: row.shoeId, features: features.map((value) => value.trim()) as Features }];
+    return features.some(featureTooLong) ? [] : [{ id: row.shoeId, features: features.map((value) => value.trim()) as Features, specs: specsOf(row, shoe) }];
   });
 
   const changeReply = (value: string) => { setReply(value); setEdits({}); };
@@ -88,7 +102,7 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
             <>
               <p className="ai-lead">
                 Paste this prompt into any AI tool (ChatGPT, Claude, Gemini…). It asks for three selling points per shoe —
-                <strong> shoe type</strong>, <strong>drop</strong> and <strong>midsole foam</strong> — in a fixed format that this app can read back.
+                <strong> shoe type</strong>, <strong>drop</strong> and <strong>midsole foam</strong> — plus the <strong>stack height</strong>, <strong>weight</strong> and <strong>plate</strong> for the specs row, in a fixed format that this app can read back.
               </p>
               {selected.length === 0 ? (
                 <div className="ai-empty">
@@ -151,6 +165,8 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
                     const shoe = shoeById.get(row.shoeId);
                     if (!shoe) return null;
                     const features = featuresOf(row, shoe);
+                    const specs = specsOf(row, shoe);
+                    const currentSpecs = specSegments(shoe.specs);
                     const tooLong = features.some(featureTooLong);
                     const checked = isChecked(row) && !tooLong;
                     const current = shoe.features.map((value) => value.trim()).filter(Boolean);
@@ -187,8 +203,31 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
                             );
                           })}
                         </div>
+                        <div className="ai-row-fields ai-spec-fields">
+                          {SPEC_INPUTS.map(({ key, label, unit, step }) => (
+                            <label key={key} className={`field ${specs[key] === null ? "needs-input" : ""}`}>
+                              <span>{label}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step={step}
+                                value={specs[key] ?? ""}
+                                placeholder="Not found"
+                                onChange={(event) => patch(row.shoeId, { specs: { ...specs, [key]: numberOrNull(event.target.value) } })}
+                              />
+                              <small className="count">{unit}</small>
+                            </label>
+                          ))}
+                          <label className={`field ${row.specs.plate === null && !specs.plate ? "needs-input" : ""}`}>
+                            <span>Plate</span>
+                            <select value={specs.plate} onChange={(event) => patch(row.shoeId, { specs: { ...specs, plate: event.target.value as PlateType } })}>
+                              <option value="">None</option>
+                              {PLATE_TYPES.map((plate) => <option key={plate} value={plate}>{PLATE_NAMES[plate]}</option>)}
+                            </select>
+                          </label>
+                        </div>
                         <p className="ai-row-meta">
-                          <span>Now: {current.length > 0 ? current.join(" · ") : "no selling points"}</span>
+                          <span>Now: {current.length > 0 ? current.join(" · ") : "no selling points"}{currentSpecs.length > 0 ? ` | ${currentSpecs.join(" · ")}` : ""}</span>
                           {row.notes && <span>AI note: {row.notes}</span>}
                           {row.matchedBy === "name" && <span>Matched by name</span>}
                         </p>

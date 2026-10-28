@@ -38,6 +38,19 @@ describe("label layout at the approved size", () => {
   });
 });
 
+describe("spec row", () => {
+  it("moves the model and selling points up to make room for it", () => {
+    const layout = computeLabelLayout(2200, 3, true);
+    expect([layout.model.y, layout.featureY, layout.specs?.y]).toEqual([92, 144, 193]);
+    expect(layout.specs).toMatchObject({ x: 653, maxWidth: 997 });
+    expect(computeLabelLayout(2200, 0, true)).toMatchObject({ model: { y: 117 }, specs: { y: 178 } });
+  });
+
+  it("leaves the approved layout alone when there are no specs", () => {
+    expect(computeLabelLayout(2200, 3)).toMatchObject({ featureY: 162, specs: null });
+  });
+});
+
 describe("narrow labels", () => {
   it("keeps the logo and price blocks at full size at the approved width and wider", () => {
     expect(squeezeFor(2200)).toBe(1);
