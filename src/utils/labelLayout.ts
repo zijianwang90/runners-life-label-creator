@@ -38,17 +38,32 @@ const FEATURE_SLOTS: Record<1 | 2 | 3, { starts: number[]; separators: number[] 
 
 export interface FeatureSlot { x: number; maxWidth: number }
 
+/**
+ * Baselines of the rows. The approved label has the model name and one row of selling points; the optional
+ * spec row (stack, weight, plate) moves both up to make room underneath them.
+ */
+const ROW_BASELINES = {
+  modelOnly: { model: 137 },
+  features: { model: 105, features: 162 },
+  specs: { model: 117, specs: 178 },
+  featuresAndSpecs: { model: 92, features: 144, specs: 193 }
+} as const;
+
 export interface LabelLayout {
   /** Canvas width in design units; the viewBox is `0 0 width 230`. */
   width: number;
   /** Scale of the logo and price blocks: 1 at the approved width and above, smaller on narrower labels. */
   squeeze: number;
   model: { x: number; y: number; maxWidth: number };
+  /** Baseline of the selling points. */
+  featureY: number;
   features: FeatureSlot[];
+  /** The spec row; null when the label has no specs. */
+  specs: { x: number; y: number; maxWidth: number } | null;
   separatorXs: number[];
 }
 
-export function computeLabelLayout(width: number, featureCount: number): LabelLayout {
+export function computeLabelLayout(width: number, featureCount: number, hasSpecs = false): LabelLayout {
   const count = Math.min(3, Math.max(0, Math.round(featureCount)));
   const squeeze = squeezeFor(width);
   const modelX = MODEL_X * squeeze;
@@ -58,11 +73,16 @@ export function computeLabelLayout(width: number, featureCount: number): LabelLa
   const slotSet = count === 0 ? { starts: [], separators: [] } : FEATURE_SLOTS[count as 1 | 2 | 3];
   const xs = slotSet.starts.map((start) => firstX + (start - FEATURE_FIRST_X) * spread);
   const separatorXs = slotSet.separators.map((x) => firstX + (x - FEATURE_FIRST_X) * spread);
+  const rows = count === 0
+    ? (hasSpecs ? ROW_BASELINES.specs : ROW_BASELINES.modelOnly)
+    : (hasSpecs ? ROW_BASELINES.featuresAndSpecs : ROW_BASELINES.features);
 
   return {
     width,
     squeeze,
-    model: { x: modelX, y: count === 0 ? 137 : 105, maxWidth: width - modelX - MODEL_RIGHT_INSET * squeeze },
+    model: { x: modelX, y: rows.model, maxWidth: width - modelX - MODEL_RIGHT_INSET * squeeze },
+    featureY: "features" in rows ? rows.features : ROW_BASELINES.features.features,
+    specs: "specs" in rows ? { x: firstX, y: rows.specs, maxWidth: rightLimit - firstX } : null,
     features: xs.map((x, index) => ({
       x,
       maxWidth: (index < separatorXs.length ? separatorXs[index] - FEATURE_SEPARATOR_GAP : rightLimit) - x

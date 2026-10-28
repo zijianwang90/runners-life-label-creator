@@ -11,6 +11,7 @@ const shoe = (id: string, quantity = 1): ShoeLabel => ({
   regularPrice: 199.99,
   salePrice: null,
   features: ["Race day", "8mm drop", "Carbon plate"],
+  specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z"

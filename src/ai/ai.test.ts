@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ShoeLabel } from "../types";
 import { resolveCategory, SHOE_CATEGORIES } from "./categories";
-import { composeFeatures, dropText, parseDrop, parseSellingPointsReply } from "./parse";
+import { composeFeatures, composeSpecs, dropText, mergeSpecs, parseDrop, parsePlate, parseSellingPointsReply, parseWeight } from "./parse";
 import { buildSellingPointsPrompt, buildShoeRefs, SELLING_POINTS_SCHEMA } from "./prompt";
 
 const shoe = (id: string, model: string, brand: ShoeLabel["brand"] = "saucony", features: ShoeLabel["features"] = ["", "", ""]): ShoeLabel => ({
@@ -11,6 +11,7 @@ const shoe = (id: string, model: string, brand: ShoeLabel["brand"] = "saucony", 
   regularPrice: 229.99,
   salePrice: null,
   features,
+  specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z"
@@ -204,5 +205,33 @@ describe("reading a reply", () => {
     expect(parseSellingPointsReply("", shoes)).toMatchObject({ rows: [], error: null });
     expect(parseSellingPointsReply("I could not find those shoes, sorry.", shoes).error).toMatch(/No JSON/);
     expect(parseSellingPointsReply(JSON.stringify({ labels: [{ ref: "nope", model: "Unknown" }] }), shoes).error).toMatch(/None of the entries/);
+  });
+});
+
+describe("specs from the reply", () => {
+  it("reads stack, weight and plate", () => {
+    const reply = JSON.stringify({ labels: [{ ref: "3f9a2c1b", category: "race", dropMm: 8, foam: "PWRRUN PB", heelStackMm: 36, forefootStackMm: 28, weightG: 233, plate: "nylon" }] });
+    expect(parseSellingPointsReply(reply, shoes).rows[0].specs).toEqual({ heelStackMm: 36, forefootStackMm: 28, weightG: 233, plate: "nylon" });
+  });
+
+  it("tolerates units, ounces and loose plate wording", () => {
+    expect(composeSpecs({ heelStack: "39 mm", forefootStack: "31mm", weight: "8.2 oz", plate: "Carbon fiber plate" }))
+      .toEqual({ heelStackMm: 39, forefootStackMm: 31, weightG: 232, plate: "carbon" });
+    expect(parseWeight(2450)).toBeNull();
+    expect(parsePlate("none")).toBe("");
+    expect(parsePlate("PEBA plate")).toBe("pebax");
+    expect(parsePlate(null)).toBeNull();
+  });
+
+  it("keeps the label's own values where the AI had no answer", () => {
+    const current = { heelStackMm: 40, forefootStackMm: 32, weightG: 250, plate: "carbon" as const };
+    expect(mergeSpecs(current, { heelStackMm: 39, forefootStackMm: null, weightG: null, plate: null }))
+      .toEqual({ heelStackMm: 39, forefootStackMm: 32, weightG: 250, plate: "carbon" });
+    expect(mergeSpecs(current, { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" }).plate).toBe("");
+  });
+
+  it("asks for the specs in the prompt", () => {
+    const prompt = buildSellingPointsPrompt([speed]);
+    for (const field of ["heelStackMm", "forefootStackMm", "weightG", "plate"]) expect(prompt).toContain(`"${field}"`);
   });
 });

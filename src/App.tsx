@@ -153,9 +153,12 @@ export default function App() {
 
   const applySellingPoints = (updates: SellingPointUpdate[]) => {
     if (updates.length === 0) return;
-    const byId = new Map(updates.map((update) => [update.id, update.features]));
+    const byId = new Map(updates.map((update) => [update.id, update]));
     const now = new Date().toISOString();
-    updateShoes(shoes.map((shoe) => byId.has(shoe.id) ? { ...shoe, features: byId.get(shoe.id)!, updatedAt: now } : shoe));
+    updateShoes(shoes.map((shoe) => {
+      const update = byId.get(shoe.id);
+      return update ? { ...shoe, features: update.features, specs: update.specs, updatedAt: now } : shoe;
+    }));
     setActiveId(updates[0].id);
     showToast(`Selling points updated on ${updates.length} label${updates.length === 1 ? "" : "s"}.`, "success");
   };

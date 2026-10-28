@@ -213,6 +213,10 @@ button { border: 0; }
 .feature-row { display: grid; grid-template-columns: 120px repeat(3, minmax(120px, 1fr)); gap: 10px; align-items: end; margin-top: 12px; }
 .feature-row-label { align-self: center; display: flex; flex-direction: column; gap: 3px; }
 .feature-row-label small { color: #92959b; font-size: 9px; }
+.spec-row { display: grid; grid-template-columns: 120px repeat(4, minmax(100px, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
+.spec-field { position: relative; }
+.spec-field input { padding-right: 34px; }
+.field .spec-unit { position: absolute; right: 10px; bottom: 10px; color: #9a9da4; font-size: 11px; font-style: normal; font-weight: 700; pointer-events: none; }
 .feature-field { position: relative; }
 .feature-field > span { position: absolute; z-index: 1; left: 8px; top: 26px; color: #fff; width: 18px; height: 18px; display: grid; place-content: center; border-radius: 3px; background: var(--red); font-size: 9px; }
 .feature-field input { padding-left: 33px; }
@@ -345,10 +349,12 @@ button { border: 0; }
 .ai-confidence.medium { color: #5b5f66; background: #ececee; }
 .ai-confidence.low { color: #8a4b00; background: #ffe8c2; }
 .ai-row-fields { display: grid; grid-template-columns: 1.1fr .8fr 1.4fr; gap: 10px; }
+.ai-spec-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 8px; }
 .ai-row-fields .field { position: relative; }
 .ai-row-fields .field input { padding-right: 44px; }
 .ai-row-fields .count { position: absolute; right: 9px; bottom: 11px; color: #9a9da4; font-size: 9px; font-weight: 700; }
 .ai-row-fields .count.over { color: #bd0017; }
+.ai-row-fields .field.needs-input select,
 .ai-row-fields .field.needs-input input { border-color: #e8b04a; background: #fffaf0; }
 .ai-row-meta { margin: 9px 0 0; display: flex; flex-wrap: wrap; gap: 4px 16px; color: #868990; font-size: 10px; line-height: 1.5; }
 

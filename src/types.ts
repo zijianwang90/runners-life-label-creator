@@ -4,6 +4,19 @@ export type BrandId = (typeof BRAND_IDS)[number];
 export type PrintMode = "custom" | "a4";
 export type PriceState = "regular" | "sale";
 
+export const PLATE_TYPES = ["carbon", "nylon", "tpu", "pebax"] as const;
+/** The plate in the midsole; "" when there is none or it is not known, and the label then says nothing about it. */
+export type PlateType = (typeof PLATE_TYPES)[number] | "";
+
+/** Optional specs printed as a second, smaller row under the selling points. Any of them may be missing. */
+export interface ShoeSpecs {
+  heelStackMm: number | null;
+  forefootStackMm: number | null;
+  /** Official weight in grams, as the brand lists it (usually men's US 9). */
+  weightG: number | null;
+  plate: PlateType;
+}
+
 export interface ShoeLabel {
   id: string;
   brand: BrandId;
@@ -11,6 +24,7 @@ export interface ShoeLabel {
   regularPrice: number | null;
   salePrice: number | null;
   features: [string, string, string];
+  specs: ShoeSpecs;
   quantity: number;
   createdAt: string;
   updatedAt: string;

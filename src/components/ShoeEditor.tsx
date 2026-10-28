@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Trash2 } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
-import { BRAND_IDS, type ShoeLabel } from "../types";
-import { getPriceState, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
+import { BRAND_IDS, PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
+import { EMPTY_SPECS, getPriceState, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
 
 interface ShoeEditorProps {
   shoe: ShoeLabel;
@@ -82,6 +82,22 @@ export function ShoeEditor(props: ShoeEditorProps) {
   const validation = validateShoe(shoe);
   const update = (patch: Partial<ShoeLabel>) => props.onChange({ ...shoe, ...patch, updatedAt: new Date().toISOString() });
   const priceState = getPriceState(shoe);
+  const specs = shoe.specs ?? EMPTY_SPECS;
+  const updateSpecs = (patch: Partial<ShoeSpecs>) => update({ specs: { ...specs, ...patch } });
+  const specNumberField = (key: "heelStackMm" | "forefootStackMm" | "weightG", label: string, unit: string, placeholder: string) => (
+    <label className={`field spec-field ${validation.fields.specs ? "has-error" : ""}`}>
+      <span>{label}</span>
+      <input
+        type="number"
+        min="0"
+        step={key === "weightG" ? "1" : "0.5"}
+        value={specs[key] ?? ""}
+        placeholder={placeholder}
+        onChange={(event) => updateSpecs({ [key]: numericValue(event.target.value) })}
+      />
+      <em className="spec-unit">{unit}</em>
+    </label>
+  );
 
   return (
     <article className={`shoe-card ${props.active ? "is-active" : ""}`} onClick={props.onActivate}>
@@ -171,6 +187,24 @@ export function ShoeEditor(props: ShoeEditorProps) {
           ))}
         </div>
         {validation.fields.features && <div className="row-error">{validation.fields.features}</div>}
+
+        <div className="spec-row">
+          <div className="feature-row-label">
+            <span>Specs</span>
+            <small>Optional · printed as a second row</small>
+          </div>
+          {specNumberField("heelStackMm", "Heel stack", "mm", "39")}
+          {specNumberField("forefootStackMm", "Forefoot stack", "mm", "31")}
+          {specNumberField("weightG", "Weight", "g", "245")}
+          <label className="field spec-field">
+            <span>Plate</span>
+            <select value={specs.plate} onChange={(event) => updateSpecs({ plate: event.target.value as PlateType })}>
+              <option value="">None / not shown</option>
+              {PLATE_TYPES.map((plate) => <option key={plate} value={plate}>{PLATE_NAMES[plate]}</option>)}
+            </select>
+          </label>
+        </div>
+        {validation.fields.specs && <div className="row-error">{validation.fields.specs}</div>}
       </div>
 
       <div className="shoe-card-actions">

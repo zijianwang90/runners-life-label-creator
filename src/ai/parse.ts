@@ -1,6 +1,6 @@
 import { brandNames } from "../assets";
-import type { ShoeLabel } from "../types";
-import { MAX_FEATURE_LENGTH } from "../utils/labels";
+import type { PlateType, ShoeLabel, ShoeSpecs } from "../types";
+import { MAX_FEATURE_LENGTH, STACK_RANGE_MM, WEIGHT_RANGE_G } from "../utils/labels";
 import { categoryText, resolveCategory } from "./categories";
 import { buildShoeRefs } from "./prompt";
 
@@ -10,10 +10,19 @@ export interface SellingPointRow {
   shoeId: string;
   /** Type, drop, midsole foam — the same slot order the prompt asks for. Blank when the AI had no answer. */
   features: [string, string, string];
+  /** Stack, weight and plate; null where the AI had no answer (plate "" means the shoe has no plate). */
+  specs: AiSpecs;
   confidence: Confidence;
   notes: string;
   /** How the reply entry was tied to a label. */
   matchedBy: "ref" | "name";
+}
+
+export interface AiSpecs {
+  heelStackMm: number | null;
+  forefootStackMm: number | null;
+  weightG: number | null;
+  plate: PlateType | null;
 }
 
 export interface ParseOutcome {
@@ -58,7 +67,7 @@ function candidatesFrom(reply: string): string[] {
 type RawItem = Record<string, unknown>;
 const isRecord = (value: unknown): value is RawItem => typeof value === "object" && value !== null && !Array.isArray(value);
 const LIST_KEYS = ["labels", "shoes", "items", "results", "products", "data"];
-const LOOKS_LIKE_ITEM = ["ref", "model", "category", "foam", "highlight", "dropmm", "drop"];
+const LOOKS_LIKE_ITEM = ["ref", "model", "category", "foam", "highlight", "dropmm", "drop", "heelstackmm", "weightg", "plate"];
 
 const keyOf = (key: string) => key.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -124,6 +133,56 @@ export function dropText(dropMm: number | null): string {
   if (dropMm === null) return "";
   if (dropMm === 0) return "Zero drop";
   return `${Math.round(dropMm * 10) / 10}mm drop`;
+}
+
+const firstNumber = (raw: string): number | null => {
+  const match = raw.replace(",", ".").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+};
+
+/** A stack height in mm, or null when absent, unknown or implausible. */
+export function parseStack(raw: unknown): number | null {
+  const value = typeof raw === "number" ? raw : typeof raw === "string" ? firstNumber(raw) : null;
+  return value !== null && Number.isFinite(value) && value >= STACK_RANGE_MM.min && value <= STACK_RANGE_MM.max ? Math.round(value * 10) / 10 : null;
+}
+
+/** A weight in grams (ounces are converted), or null when absent, unknown or implausible. */
+export function parseWeight(raw: unknown): number | null {
+  let value = typeof raw === "number" ? raw : typeof raw === "string" ? firstNumber(raw) : null;
+  if (value !== null && typeof raw === "string" && /\boz\b|ounce/i.test(raw)) value *= 28.35;
+  return value !== null && Number.isFinite(value) && value >= WEIGHT_RANGE_G.min && value <= WEIGHT_RANGE_G.max ? Math.round(value) : null;
+}
+
+/** The plate type; "" when the shoe has none, null when the AI did not know. */
+export function parsePlate(raw: unknown): PlateType | null {
+  if (raw === false) return "";
+  if (typeof raw !== "string") return null;
+  const value = raw.toLowerCase();
+  if (/carbon/.test(value)) return "carbon";
+  if (/peba/.test(value)) return "pebax";
+  if (/tpu/.test(value)) return "tpu";
+  if (/nylon/.test(value)) return "nylon";
+  if (/^\s*(none|no( plate)?|n\/a|-)?\s*$/.test(value) && value.trim() !== "") return "";
+  return null;
+}
+
+export function composeSpecs(item: RawItem): AiSpecs {
+  return {
+    heelStackMm: parseStack(pick(item, "heelStackMm", "heelStack", "heelHeight", "stackHeel")),
+    forefootStackMm: parseStack(pick(item, "forefootStackMm", "forefootStack", "forefootHeight", "stackForefoot")),
+    weightG: parseWeight(pick(item, "weightG", "weight", "weightGrams")),
+    plate: parsePlate(pick(item, "plate", "plateType"))
+  };
+}
+
+/** The label's specs after taking the AI's answers; anything the AI did not know keeps the label's own value. */
+export function mergeSpecs(current: ShoeSpecs, ai: AiSpecs): ShoeSpecs {
+  return {
+    heelStackMm: ai.heelStackMm ?? current.heelStackMm,
+    forefootStackMm: ai.forefootStackMm ?? current.forefootStackMm,
+    weightG: ai.weightG ?? current.weightG,
+    plate: ai.plate ?? current.plate
+  };
 }
 
 const CONFIDENCES: Confidence[] = ["high", "medium", "low"];
@@ -212,6 +271,7 @@ export function parseSellingPointsReply(reply: string, allShoes: ShoeLabel[], ex
     rows.push({
       shoeId: shoe.id,
       features: composeFeatures(item),
+      specs: composeSpecs(item),
       confidence: readConfidence(pick(item, "confidence")),
       notes: text(pick(item, "notes", "note", "comment", "source")),
       matchedBy: byRef ? "ref" : "name"

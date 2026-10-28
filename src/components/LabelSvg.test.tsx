@@ -13,6 +13,7 @@ const shoe: ShoeLabel = {
   regularPrice: 229.99,
   salePrice: 189.99,
   features: ["Race day", "8mm drop", "PWRRUN PB"],
+  specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z"
@@ -48,6 +49,30 @@ describe("label at the approved 220 × 23 mm", () => {
   it("draws the dividers between selling points as before", () => {
     const { separators } = draw();
     expect(separators.map((line) => [line.getAttribute("x1"), line.getAttribute("y1"), line.getAttribute("y2")])).toEqual([["979", "140", "170"], ["1293", "140", "170"]]);
+  });
+});
+
+describe("spec row", () => {
+  const withSpecs: ShoeLabel = { ...shoe, specs: { heelStackMm: 36, forefootStackMm: 28, weightG: 233, plate: "nylon" } };
+
+  it("prints stack, weight and plate under the selling points", () => {
+    const { texts, separators } = draw(undefined, undefined, withSpecs);
+    const specRow = texts.find((text) => text.getAttribute("y") === "193")!;
+    expect(specRow.textContent).toBe("STACK 36/28 MM  •  233 G  •  NYLON PLATE");
+    expect(specRow.getAttribute("x")).toBe("653");
+    expect(texts.filter((text) => text.getAttribute("y") === "144")).toHaveLength(3);
+    expect(texts.find((text) => text.textContent === "ENDORPHIN SPEED 5")!.getAttribute("y")).toBe("92");
+    expect(separators.map((line) => [line.getAttribute("y1"), line.getAttribute("y2")])).toEqual([["122", "152"], ["122", "152"]]);
+  });
+
+  it("shows only the specs that are filled in", () => {
+    const { texts } = draw(undefined, undefined, { ...shoe, specs: { heelStackMm: null, forefootStackMm: null, weightG: 170, plate: "" } });
+    expect(texts.find((text) => text.getAttribute("y") === "193")!.textContent).toBe("170 G");
+  });
+
+  it("draws no spec row without specs", () => {
+    const { texts } = draw();
+    expect(texts.some((text) => text.textContent?.includes("STACK"))).toBe(false);
   });
 });
 

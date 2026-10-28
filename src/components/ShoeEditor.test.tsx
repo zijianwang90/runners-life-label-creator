@@ -13,6 +13,7 @@ const base: ShoeLabel = {
   regularPrice: 200,
   salePrice: null,
   features: ["", "", ""],
+  specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z"
@@ -63,5 +64,23 @@ describe("sale percent", () => {
   it("waits for a regular price", () => {
     render(<Harness initial={{ regularPrice: null }} />);
     expect(input(/sale %/i).disabled).toBe(true);
+  });
+});
+
+describe("specs", () => {
+  it("stores typed stack heights, weight and plate", () => {
+    render(<Harness initial={{}} />);
+    fireEvent.change(input(/heel stack/i), { target: { value: "39" } });
+    fireEvent.change(input(/forefoot stack/i), { target: { value: "31" } });
+    fireEvent.change(input(/weight/i), { target: { value: "245" } });
+    fireEvent.change(screen.getByLabelText(/plate/i), { target: { value: "carbon" } });
+    expect([input(/heel stack/i).value, input(/forefoot stack/i).value, input(/weight/i).value]).toEqual(["39", "31", "245"]);
+    expect((screen.getByLabelText(/plate/i) as HTMLSelectElement).value).toBe("carbon");
+  });
+
+  it("flags a weight typed in ounces", () => {
+    render(<Harness initial={{}} />);
+    fireEvent.change(input(/weight/i), { target: { value: "8.6" } });
+    expect(screen.getByText(/Weight is in grams/)).toBeTruthy();
   });
 });
