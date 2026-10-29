@@ -40,14 +40,25 @@ export interface FeatureSlot { x: number; maxWidth: number }
 
 /**
  * Baselines of the rows. The approved label has the model name and one row of selling points; the optional
- * spec row (stack, weight, plate) moves both up to make room underneath them.
+ * summary line (who the shoe is for) sits right under the model name, and the optional spec row (stack,
+ * weight, plate) goes underneath everything. Each extra row moves the others up to make room.
  */
 const ROW_BASELINES = {
   modelOnly: { model: 137 },
   features: { model: 105, features: 162 },
   specs: { model: 117, specs: 178 },
-  featuresAndSpecs: { model: 92, features: 144, specs: 193 }
+  featuresAndSpecs: { model: 92, features: 144, specs: 193 },
+  summary: { model: 105, summary: 160 },
+  summaryAndFeatures: { model: 90, summary: 133, features: 180 },
+  summaryAndSpecs: { model: 92, summary: 136, specs: 183 },
+  all: { model: 78, summary: 118, features: 159, specs: 201 }
 } as const;
+
+type RowKey = keyof typeof ROW_BASELINES;
+const ROW_KEYS: Record<string, RowKey> = {
+  "000": "modelOnly", "010": "features", "001": "specs", "011": "featuresAndSpecs",
+  "100": "summary", "110": "summaryAndFeatures", "101": "summaryAndSpecs", "111": "all"
+};
 
 export interface LabelLayout {
   /** Canvas width in design units; the viewBox is `0 0 width 230`. */
@@ -55,6 +66,8 @@ export interface LabelLayout {
   /** Scale of the logo and price blocks: 1 at the approved width and above, smaller on narrower labels. */
   squeeze: number;
   model: { x: number; y: number; maxWidth: number };
+  /** The summary line; null when the label has none. */
+  summary: { x: number; y: number; maxWidth: number } | null;
   /** Baseline of the selling points. */
   featureY: number;
   features: FeatureSlot[];
@@ -63,7 +76,7 @@ export interface LabelLayout {
   separatorXs: number[];
 }
 
-export function computeLabelLayout(width: number, featureCount: number, hasSpecs = false): LabelLayout {
+export function computeLabelLayout(width: number, featureCount: number, hasSpecs = false, hasSummary = false): LabelLayout {
   const count = Math.min(3, Math.max(0, Math.round(featureCount)));
   const squeeze = squeezeFor(width);
   const modelX = MODEL_X * squeeze;
@@ -73,16 +86,17 @@ export function computeLabelLayout(width: number, featureCount: number, hasSpecs
   const slotSet = count === 0 ? { starts: [], separators: [] } : FEATURE_SLOTS[count as 1 | 2 | 3];
   const xs = slotSet.starts.map((start) => firstX + (start - FEATURE_FIRST_X) * spread);
   const separatorXs = slotSet.separators.map((x) => firstX + (x - FEATURE_FIRST_X) * spread);
-  const rows = count === 0
-    ? (hasSpecs ? ROW_BASELINES.specs : ROW_BASELINES.modelOnly)
-    : (hasSpecs ? ROW_BASELINES.featuresAndSpecs : ROW_BASELINES.features);
+  const rows: { model: number; summary?: number; features?: number; specs?: number } =
+    ROW_BASELINES[ROW_KEYS[`${Number(hasSummary)}${Number(count > 0)}${Number(hasSpecs)}`]];
+  const fullRow = (y: number | undefined) => (y === undefined ? null : { x: firstX, y, maxWidth: rightLimit - firstX });
 
   return {
     width,
     squeeze,
     model: { x: modelX, y: rows.model, maxWidth: width - modelX - MODEL_RIGHT_INSET * squeeze },
-    featureY: "features" in rows ? rows.features : ROW_BASELINES.features.features,
-    specs: "specs" in rows ? { x: firstX, y: rows.specs, maxWidth: rightLimit - firstX } : null,
+    summary: fullRow(rows.summary),
+    featureY: rows.features ?? ROW_BASELINES.features.features,
+    specs: fullRow(rows.specs),
     features: xs.map((x, index) => ({
       x,
       maxWidth: (index < separatorXs.length ? separatorXs[index] - FEATURE_SEPARATOR_GAP : rightLimit) - x

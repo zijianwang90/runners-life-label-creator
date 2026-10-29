@@ -1,6 +1,8 @@
 import { PLATE_TYPES, type PlateType, type PriceState, type ShoeLabel, type ShoeSpecs } from "../types";
 
 export const MAX_FEATURE_LENGTH = 32;
+/** The summary line shares the text area's full width, so it can run much longer than a selling point. */
+export const MAX_SUMMARY_LENGTH = 60;
 
 export const EMPTY_SPECS: ShoeSpecs = { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" };
 /** Plausible ranges; values outside them are almost certainly typos (or ounces typed as grams). */
@@ -49,7 +51,7 @@ export function specSegments(specs: ShoeSpecs | undefined): string[] {
 export interface ShoeValidation {
   valid: boolean;
   errors: string[];
-  fields: Partial<Record<"model" | "regularPrice" | "salePrice" | "features" | "specs" | "quantity", string>>;
+  fields: Partial<Record<"model" | "regularPrice" | "salePrice" | "features" | "summary" | "specs" | "quantity", string>>;
 }
 
 export function getPriceState(shoe: ShoeLabel): PriceState {
@@ -107,6 +109,8 @@ export function validateShoe(shoe: ShoeLabel): ShoeValidation {
 
   const filledFeatures = shoe.features.map((feature) => feature.trim()).filter(Boolean);
   if (filledFeatures.some((feature) => feature.length > MAX_FEATURE_LENGTH)) fields.features = `Keep each selling point to ${MAX_FEATURE_LENGTH} characters or fewer.`;
+
+  if ((shoe.summary ?? "").trim().length > MAX_SUMMARY_LENGTH) fields.summary = `Keep the summary to ${MAX_SUMMARY_LENGTH} characters or fewer.`;
 
   const { heelStackMm, forefootStackMm, weightG } = shoe.specs ?? EMPTY_SPECS;
   const outOfRange = (value: number | null, range: { min: number; max: number }) => value !== null && (value < range.min || value > range.max);

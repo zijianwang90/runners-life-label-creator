@@ -51,6 +51,22 @@ describe("spec row", () => {
   });
 });
 
+describe("summary line", () => {
+  it("sits under the model name and moves the other rows to make room", () => {
+    const all = computeLabelLayout(2200, 3, true, true);
+    expect([all.model.y, all.summary?.y, all.featureY, all.specs?.y]).toEqual([78, 118, 159, 201]);
+    expect(all.summary).toMatchObject({ x: 653, maxWidth: 997 });
+    expect(computeLabelLayout(2200, 3, false, true)).toMatchObject({ model: { y: 90 }, summary: { y: 133 }, featureY: 180, specs: null });
+    expect(computeLabelLayout(2200, 0, true, true)).toMatchObject({ model: { y: 92 }, summary: { y: 136 }, specs: { y: 183 } });
+    expect(computeLabelLayout(2200, 0, false, true)).toMatchObject({ model: { y: 105 }, summary: { y: 160 } });
+  });
+
+  it("leaves the layout alone without a summary", () => {
+    expect(computeLabelLayout(2200, 3, true)).toMatchObject({ model: { y: 92 }, featureY: 144, summary: null });
+    expect(computeLabelLayout(2200, 3)).toMatchObject({ model: { y: 105 }, featureY: 162, summary: null });
+  });
+});
+
 describe("narrow labels", () => {
   it("keeps the logo and price blocks at full size at the approved width and wider", () => {
     expect(squeezeFor(2200)).toBe(1);

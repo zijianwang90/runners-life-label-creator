@@ -24,6 +24,8 @@ export interface ShoeLabel {
   regularPrice: number | null;
   salePrice: number | null;
   features: [string, string, string];
+  /** One line on who the shoe is for, printed under the model name; "" when not shown. */
+  summary: string;
   specs: ShoeSpecs;
   quantity: number;
   createdAt: string;

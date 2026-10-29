@@ -2,6 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { LabelSize, ShoeLabel } from "../types";
 import { squeezeFor } from "../utils/labelLayout";
+import designTokens from "../../design/label-design-system.json";
 import { LabelSvg } from "./LabelSvg";
 
 afterEach(cleanup);
@@ -13,6 +14,7 @@ const shoe: ShoeLabel = {
   regularPrice: 229.99,
   salePrice: 189.99,
   features: ["Race day", "8mm drop", "PWRRUN PB"],
+  summary: "",
   specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -49,6 +51,32 @@ describe("label at the approved 220 × 23 mm", () => {
   it("draws the dividers between selling points as before", () => {
     const { separators } = draw();
     expect(separators.map((line) => [line.getAttribute("x1"), line.getAttribute("y1"), line.getAttribute("y2")])).toEqual([["979", "140", "170"], ["1293", "140", "170"]]);
+  });
+});
+
+describe("summary line", () => {
+  const withSummary: ShoeLabel = { ...shoe, summary: "  For runners chasing a faster tempo  " };
+
+  it("prints the summary in red under the model name", () => {
+    const { texts, separators } = draw(undefined, undefined, withSummary);
+    const summary = texts.find((text) => text.textContent === "FOR RUNNERS CHASING A FASTER TEMPO")!;
+    expect([summary.getAttribute("x"), summary.getAttribute("y"), summary.getAttribute("font-size")]).toEqual(["653", "133", "19"]);
+    expect(summary.getAttribute("fill")).toBe(designTokens.palette.runnersLifeRed);
+    expect(texts.find((text) => text.textContent === "ENDORPHIN SPEED 5")!.getAttribute("y")).toBe("90");
+    expect(texts.filter((text) => text.getAttribute("y") === "180")).toHaveLength(3);
+    expect(separators.map((line) => [line.getAttribute("y1"), line.getAttribute("y2")])).toEqual([["158", "188"], ["158", "188"]]);
+  });
+
+  it("shrinks a long summary to fit the text area", () => {
+    const { texts } = draw(undefined, 1.5, { ...shoe, summary: "For new runners who want soft, cushioned and forgiving easy miles every single day" });
+    const summary = texts.find((text) => text.getAttribute("y") === "133")!;
+    expect(Number(summary.getAttribute("font-size"))).toBeLessThan(28.5);
+  });
+
+  it("draws no summary line when it is blank", () => {
+    const { texts } = draw(undefined, undefined, { ...shoe, summary: "   " });
+    expect(texts.find((text) => text.textContent === "ENDORPHIN SPEED 5")!.getAttribute("y")).toBe("105");
+    expect(texts).toHaveLength(draw().texts.length);
   });
 });
 

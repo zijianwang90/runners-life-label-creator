@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, Copy, ShoppingCart, Trash2, X } from "lucide-react"
 import { brandLogos, brandNames } from "../assets";
 import { BRAND_IDS, PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
 import { QuantityStepper } from "./QuantityStepper";
-import { EMPTY_SPECS, getPriceState, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
+import { EMPTY_SPECS, getPriceState, MAX_SUMMARY_LENGTH, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
 
 interface ShoeEditorProps {
   shoe: ShoeLabel;
@@ -197,6 +197,24 @@ export function ShoeEditor(props: ShoeEditorProps) {
           <SalePercentField regularPrice={shoe.regularPrice} salePrice={shoe.salePrice} onSalePriceChange={(salePrice) => update({ salePrice })} />
 
         </div>
+
+        <div className="summary-row">
+          <div className="feature-row-label">
+            <span>Who it's for</span>
+            <small>Optional · one line under the model</small>
+          </div>
+          <label className={`field summary-field ${validation.fields.summary ? "has-error" : ""}`}>
+            <span>Summary</span>
+            <input
+              value={shoe.summary ?? ""}
+              maxLength={80}
+              placeholder="e.g. For runners chasing a faster tempo and race pace"
+              onChange={(event) => update({ summary: event.target.value })}
+            />
+            <em className="summary-count">{(shoe.summary ?? "").trim().length}/{MAX_SUMMARY_LENGTH}</em>
+          </label>
+        </div>
+        {validation.fields.summary && <div className="row-error">{validation.fields.summary}</div>}
 
         <div className="feature-row">
           <div className="feature-row-label">

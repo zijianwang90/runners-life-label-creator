@@ -1,14 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, ClipboardCheck, Copy, FileUp, Sparkles, TriangleAlert, X } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
-import { featureTooLong, mergeSpecs, parseSellingPointsReply, type SellingPointRow } from "../ai/parse";
+import { featureTooLong, mergeSpecs, parseSellingPointsReply, summaryTooLong, type SellingPointRow } from "../ai/parse";
 import { buildSellingPointsPrompt } from "../ai/prompt";
 import { PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
 import { copyToClipboard } from "../utils/clipboard";
-import { EMPTY_SPECS, MAX_FEATURE_LENGTH, PLATE_NAMES, specSegments } from "../utils/labels";
+import { EMPTY_SPECS, MAX_FEATURE_LENGTH, MAX_SUMMARY_LENGTH, PLATE_NAMES, specSegments } from "../utils/labels";
 
 type Features = ShoeLabel["features"];
-export interface SellingPointUpdate { id: string; features: Features; specs: ShoeSpecs }
+export interface SellingPointUpdate { id: string; features: Features; summary: string; specs: ShoeSpecs }
 
 interface AiPromptDialogProps {
   open: boolean;
@@ -35,7 +35,7 @@ const numberOrNull = (value: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-interface RowEdit { features?: Features; specs?: ShoeSpecs; apply?: boolean }
+interface RowEdit { features?: Features; summary?: string; specs?: ShoeSpecs; apply?: boolean }
 
 export function AiPromptDialog(props: AiPromptDialogProps) {
   // Mounted only while open, so closing the dialog also clears the pasted reply.
@@ -56,6 +56,7 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
   // Slots the AI could not answer start out with what the label already says, so nothing is wiped by accident.
   const featuresOf = (row: SellingPointRow, shoe: ShoeLabel): Features =>
     edits[row.shoeId]?.features ?? (row.features.map((value, index) => value || shoe.features[index]) as Features);
+  const summaryOf = (row: SellingPointRow, shoe: ShoeLabel): string => edits[row.shoeId]?.summary ?? (row.summary || shoe.summary || "");
   const specsOf = (row: SellingPointRow, shoe: ShoeLabel): ShoeSpecs =>
     edits[row.shoeId]?.specs ?? mergeSpecs(shoe.specs ?? EMPTY_SPECS, row.specs);
   const isChecked = (row: SellingPointRow) => edits[row.shoeId]?.apply ?? row.confidence !== "low";
@@ -64,7 +65,10 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
     const shoe = shoeById.get(row.shoeId);
     if (!shoe || !isChecked(row)) return [];
     const features = featuresOf(row, shoe);
-    return features.some(featureTooLong) ? [] : [{ id: row.shoeId, features: features.map((value) => value.trim()) as Features, specs: specsOf(row, shoe) }];
+    const summary = summaryOf(row, shoe);
+    return features.some(featureTooLong) || summaryTooLong(summary)
+      ? []
+      : [{ id: row.shoeId, features: features.map((value) => value.trim()) as Features, summary: summary.trim(), specs: specsOf(row, shoe) }];
   });
 
   const changeReply = (value: string) => { setReply(value); setEdits({}); };
@@ -102,7 +106,7 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
             <>
               <p className="ai-lead">
                 Paste this prompt into any AI tool (ChatGPT, Claude, Gemini…). It asks for three selling points per shoe —
-                <strong> shoe type</strong>, <strong>drop</strong> and <strong>midsole foam</strong> — plus the <strong>stack height</strong>, <strong>weight</strong> and <strong>plate</strong> for the specs row, in a fixed format that this app can read back.
+                <strong> shoe type</strong>, <strong>drop</strong> and <strong>midsole foam</strong> — plus a one-line <strong>who it's for</strong> summary and the <strong>stack height</strong>, <strong>weight</strong> and <strong>plate</strong> for the specs row, in a fixed format that this app can read back.
               </p>
               {selected.length === 0 ? (
                 <div className="ai-empty">
@@ -167,7 +171,8 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
                     const features = featuresOf(row, shoe);
                     const specs = specsOf(row, shoe);
                     const currentSpecs = specSegments(shoe.specs);
-                    const tooLong = features.some(featureTooLong);
+                    const summary = summaryOf(row, shoe);
+                    const tooLong = features.some(featureTooLong) || summaryTooLong(summary);
                     const checked = isChecked(row) && !tooLong;
                     const current = shoe.features.map((value) => value.trim()).filter(Boolean);
                     return (
@@ -202,6 +207,17 @@ function AiPromptDialogBody({ allShoes, selected, onClose, onApply }: AiPromptDi
                               </label>
                             );
                           })}
+                        </div>
+                        <div className="ai-row-fields ai-summary-fields">
+                          <label className={`field ${summaryTooLong(summary) ? "has-error" : ""} ${summary.trim() ? "" : "needs-input"}`}>
+                            <span>Who it's for</span>
+                            <input
+                              value={summary}
+                              placeholder={row.summary ? "" : "Not found — For runners chasing a marathon PB"}
+                              onChange={(event) => patch(row.shoeId, { summary: event.target.value })}
+                            />
+                            <small className={summaryTooLong(summary) ? "count over" : "count"}>{summary.trim().length}/{MAX_SUMMARY_LENGTH}</small>
+                          </label>
                         </div>
                         <div className="ai-row-fields ai-spec-fields">
                           {SPEC_INPUTS.map(({ key, label, unit, step }) => (

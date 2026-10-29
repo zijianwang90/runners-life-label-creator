@@ -23,6 +23,7 @@ const shoe = (patch: Partial<ShoeLabel> = {}): ShoeLabel => ({
   regularPrice: 229.99,
   salePrice: 189.99,
   features: ["Lightweight", "Speedroll technology", "Tempo-ready"],
+  summary: "",
   specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",

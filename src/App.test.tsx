@@ -5,6 +5,7 @@ import App from "./App";
 const now = "2026-01-01T00:00:00.000Z";
 const label = (id: string, model: string, regularPrice: number | null = 200) => ({
   id, brand: "saucony", model, regularPrice, salePrice: null, features: ["", "", ""],
+  summary: "",
   specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" }, quantity: 1, createdAt: now, updatedAt: now
 });
 

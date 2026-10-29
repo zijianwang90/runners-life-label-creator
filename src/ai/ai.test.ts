@@ -11,6 +11,7 @@ const shoe = (id: string, model: string, brand: ShoeLabel["brand"] = "saucony", 
   regularPrice: 229.99,
   salePrice: null,
   features,
+  summary: "",
   specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -205,6 +206,22 @@ describe("reading a reply", () => {
     expect(parseSellingPointsReply("", shoes)).toMatchObject({ rows: [], error: null });
     expect(parseSellingPointsReply("I could not find those shoes, sorry.", shoes).error).toMatch(/No JSON/);
     expect(parseSellingPointsReply(JSON.stringify({ labels: [{ ref: "nope", model: "Unknown" }] }), shoes).error).toMatch(/None of the entries/);
+  });
+});
+
+describe("summary from the reply", () => {
+  it("reads the summary and tidies it", () => {
+    const reply = JSON.stringify({ labels: [{ ref: "3f9a2c1b", category: "race", summary: " For racers chasing a marathon PB. " }] });
+    expect(parseSellingPointsReply(reply, shoes).rows[0].summary).toBe("For racers chasing a marathon PB");
+  });
+
+  it("accepts other names for the field and leaves it blank when missing", () => {
+    expect(parseSellingPointsReply(JSON.stringify({ labels: [{ ref: "3f9a2c1b", audience: "For new runners" }] }), shoes).rows[0].summary).toBe("For new runners");
+    expect(parseSellingPointsReply(JSON.stringify({ labels: [{ ref: "3f9a2c1b", category: "race" }] }), shoes).rows[0].summary).toBe("");
+  });
+
+  it("asks for the summary in the prompt", () => {
+    expect(buildSellingPointsPrompt([speed])).toContain('"summary"');
   });
 });
 

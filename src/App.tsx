@@ -163,7 +163,7 @@ export default function App() {
     const now = new Date().toISOString();
     updateShoes(shoes.map((shoe) => {
       const update = byId.get(shoe.id);
-      return update ? { ...shoe, features: update.features, specs: update.specs, updatedAt: now } : shoe;
+      return update ? { ...shoe, features: update.features, summary: update.summary, specs: update.specs, updatedAt: now } : shoe;
     }));
     setActiveId(updates[0].id);
     showToast(`Selling points updated on ${updates.length} label${updates.length === 1 ? "" : "s"}.`, "success");

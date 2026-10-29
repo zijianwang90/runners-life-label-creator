@@ -156,6 +156,23 @@ Optical scale 不是品牌区宽度，而是 Logo 在固定区域内的视觉修
 - `SPEEDROLL TECHNOLOGY`
 - `BUILT FOR TEMPO RUNS`
 
+### 一句话总结行（可选）
+
+- 作用：一句话说明这双鞋适合谁，让顾客一秒钟知道它针对的人群，例如 `FOR RUNNERS CHASING A FASTER TEMPO`、`FOR NEW RUNNERS WHO WANT SOFT, EASY MILES`。
+- 位置：紧跟型号下方，起点与卖点相同（`x=653`），占满整个文字区宽度。
+- 字号：19 SVG 单位 × 卖点文字比例（标准 150% 时为 28.5），字重 800，品牌红色，字间距 0.4；放不下时先缩小（最小 70%），再压缩。
+- 长度：最多 60 个字符；AI 提示词要求 50 个字符以内，以 “For” 开头，写人群而不是技术。
+- 基线（2200 宽）：
+
+| 内容 | 型号 | 总结 | 卖点 | 规格 |
+| --- | --- | --- | --- | --- |
+| 型号 + 总结 | 105 | 160 | — | — |
+| 型号 + 总结 + 卖点 | 90 | 133 | 180 | — |
+| 型号 + 总结 + 规格 | 92 | 136 | — | 183 |
+| 全部四行 | 78 | 118 | 159 | 201 |
+
+- 没有总结时，布局与原有方案完全一致。
+
 ### 规格行（可选）
 
 - 内容：前后掌堆高、重量、板材，全部可选；任一项有值时才显示，没有值的项不显示。
@@ -253,6 +270,7 @@ interface ShoeLabelData {
   regularPrice: number;
   salePrice?: number;
   features: [string, string, string]; // 每项可为空，允许全部为空
+  summary: string;                     // 一句话总结（适合谁），可为空
   specs: {                             // 可选规格行，每项可为空
     heelStackMm: number | null;
     forefootStackMm: number | null;

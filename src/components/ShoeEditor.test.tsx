@@ -13,6 +13,7 @@ const base: ShoeLabel = {
   regularPrice: 200,
   salePrice: null,
   features: ["", "", ""],
+  summary: "",
   specs: { heelStackMm: null, forefootStackMm: null, weightG: null, plate: "" },
   quantity: 1,
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -83,5 +84,19 @@ describe("specs", () => {
     render(<Harness initial={{}} />);
     fireEvent.change(input(/weight/i), { target: { value: "8.6" } });
     expect(screen.getByText(/Weight is in grams/)).toBeTruthy();
+  });
+});
+
+describe("summary", () => {
+  it("stores the one-line summary and counts its characters", () => {
+    render(<Harness initial={{}} />);
+    fireEvent.change(input(/^summary/i), { target: { value: "For racers chasing a marathon PB" } });
+    expect(input(/^summary/i).value).toBe("For racers chasing a marathon PB");
+    expect(screen.getByText("32/60")).toBeTruthy();
+  });
+
+  it("flags a summary that is too long", () => {
+    render(<Harness initial={{ summary: "x".repeat(61) }} />);
+    expect(screen.getByText(/Keep the summary to 60 characters/)).toBeTruthy();
   });
 });

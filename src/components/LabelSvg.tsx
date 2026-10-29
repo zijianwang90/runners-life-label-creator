@@ -84,6 +84,10 @@ function specRowSize(segments: string[], maxWidth: number, featureScale: number)
   return width <= maxWidth ? baseSize : Math.floor(((baseSize * maxWidth) / width) * 10) / 10;
 }
 
+/** The summary line under the model name: red so it reads first, a touch smaller than the selling points. */
+const SUMMARY_BASE_SIZE = 19;
+const SUMMARY_LETTER_SPACING = 0.4;
+
 const PRICE_POLYGON = [[1730, 0], [2200, 0], [2200, 230], [1668, 230]] as const;
 
 export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE, modelScale = 1, featureScale = 1, priceScale = 1, regularScale = 1, sealScale = 1, className = "", title }: LabelSvgProps) {
@@ -96,7 +100,8 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const displayedPrice = priceState === "sale" ? shoe.salePrice : shoe.regularPrice;
   const features = shoe.features.map((feature) => feature.trim()).filter(Boolean).slice(0, 3);
   const specs = specSegments(shoe.specs).map((segment) => segment.toUpperCase());
-  const layout = computeLabelLayout(designWidth(size), features.length, specs.length > 0);
+  const summary = (shoe.summary ?? "").trim().toUpperCase();
+  const layout = computeLabelLayout(designWidth(size), features.length, specs.length > 0, summary !== "");
   const textScale = clampTextScale("feature", featureScale);
   const modelTextScale = clampTextScale("model", modelScale);
   const priceTextScale = clampTextScale("price", priceScale);
@@ -111,6 +116,9 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
   const separatorTop = round(layout.featureY - 22 * textScale);
   const separatorBottom = round(layout.featureY + 8 * textScale);
   const specSize = layout.specs ? specRowSize(specs, layout.specs.maxWidth, textScale) : 0;
+  const summaryFit = layout.summary
+    ? fitText(summary, { baseSize: round(SUMMARY_BASE_SIZE * textScale), maxWidth: layout.summary.maxWidth, weight: 800, letterSpacing: SUMMARY_LETTER_SPACING, minRatio: 0.7 })
+    : null;
   const canvasWidth = round(layout.width);
   const modelText = (shoe.model || "SHOE MODEL").toUpperCase();
   const modelFit = fitText(modelText, {
@@ -220,6 +228,22 @@ export function LabelSvg({ shoe, currencySymbol = "$", size = DEFAULT_LABEL_SIZE
       >
         {modelText}
       </text>
+
+      {layout.summary && summaryFit && (
+        <text
+          x={round(layout.summary.x)}
+          y={layout.summary.y}
+          fill={designTokens.palette.runnersLifeRed}
+          fontFamily={LABEL_FONT}
+          fontSize={summaryFit.fontSize}
+          fontWeight="800"
+          letterSpacing={SUMMARY_LETTER_SPACING}
+          textLength={summaryFit.textLength}
+          lengthAdjust={summaryFit.textLength ? "spacingAndGlyphs" : undefined}
+        >
+          {summary}
+        </text>
+      )}
 
       {features.map((feature, index) => {
         const slot = layout.features[index];

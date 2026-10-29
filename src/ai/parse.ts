@@ -1,6 +1,6 @@
 import { brandNames } from "../assets";
 import type { PlateType, ShoeLabel, ShoeSpecs } from "../types";
-import { MAX_FEATURE_LENGTH, STACK_RANGE_MM, WEIGHT_RANGE_G } from "../utils/labels";
+import { MAX_FEATURE_LENGTH, MAX_SUMMARY_LENGTH, STACK_RANGE_MM, WEIGHT_RANGE_G } from "../utils/labels";
 import { categoryText, resolveCategory } from "./categories";
 import { buildShoeRefs } from "./prompt";
 
@@ -10,6 +10,8 @@ export interface SellingPointRow {
   shoeId: string;
   /** Type, drop, midsole foam — the same slot order the prompt asks for. Blank when the AI had no answer. */
   features: [string, string, string];
+  /** Who the shoe is for, in one line; "" when the AI had no answer. */
+  summary: string;
   /** Stack, weight and plate; null where the AI had no answer (plate "" means the shoe has no plate). */
   specs: AiSpecs;
   confidence: Confidence;
@@ -67,7 +69,7 @@ function candidatesFrom(reply: string): string[] {
 type RawItem = Record<string, unknown>;
 const isRecord = (value: unknown): value is RawItem => typeof value === "object" && value !== null && !Array.isArray(value);
 const LIST_KEYS = ["labels", "shoes", "items", "results", "products", "data"];
-const LOOKS_LIKE_ITEM = ["ref", "model", "category", "foam", "highlight", "dropmm", "drop", "heelstackmm", "weightg", "plate"];
+const LOOKS_LIKE_ITEM = ["ref", "model", "category", "foam", "highlight", "dropmm", "drop", "heelstackmm", "weightg", "plate", "summary"];
 
 const keyOf = (key: string) => key.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -271,6 +273,7 @@ export function parseSellingPointsReply(reply: string, allShoes: ShoeLabel[], ex
     rows.push({
       shoeId: shoe.id,
       features: composeFeatures(item),
+      summary: text(pick(item, "summary", "whoItsFor", "whoFor", "forWho", "audience", "targetRunner", "tagline", "oneLiner")),
       specs: composeSpecs(item),
       confidence: readConfidence(pick(item, "confidence")),
       notes: text(pick(item, "notes", "note", "comment", "source")),
@@ -286,3 +289,4 @@ export function parseSellingPointsReply(reply: string, allShoes: ShoeLabel[], ex
 }
 
 export const featureTooLong = (feature: string) => feature.trim().length > MAX_FEATURE_LENGTH;
+export const summaryTooLong = (summary: string) => summary.trim().length > MAX_SUMMARY_LENGTH;
