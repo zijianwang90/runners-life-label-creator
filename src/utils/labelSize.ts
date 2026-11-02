@@ -72,7 +72,10 @@ export function textPrintSize(kind: TextKind, scale: number, heightMm: number): 
 
 export const featureTextPrintSize = (scale: number, heightMm: number) => textPrintSize("feature", scale, heightMm);
 
-export const A4_LANDSCAPE = { widthMm: 297, heightMm: 210, marginYmm: 13 } as const;
+/** `marginXmm` keeps the crop marks beside the label clear of the edge a printer can't reach. */
+export const A4_SHEET = { shortMm: 210, longMm: 297, marginXmm: 12, marginYmm: 13 } as const;
+/** The approved sheet holds eight; a sheet never takes more, which also leaves room if it is printed on Letter. */
+export const MAX_LABELS_PER_SHEET = 8;
 
 export interface Range { min: number; max: number }
 export interface LabelSizeRanges { widthMm: Range; heightMm: Range }
@@ -145,22 +148,37 @@ export const formatMm = (value: number): string => String(roundTenth(value));
 export const formatLabelSize = (size: LabelSize): string => `${formatMm(size.widthMm)} × ${formatMm(size.heightMm)} mm`;
 
 export interface A4Layout {
-  /** Labels stacked on one landscape sheet. */
+  orientation: "landscape" | "portrait";
+  pageWidthMm: number;
+  pageHeightMm: number;
+  /** Labels stacked on one sheet. */
   perPage: number;
   leftMm: number;
   topMm: number;
   stackHeightMm: number;
 }
 
-/** Stacks as many labels as fit between the sheet's top and bottom margins, centred on the page. */
+const labelsPerSheet = (pageHeightMm: number, labelHeightMm: number): number =>
+  Math.min(MAX_LABELS_PER_SHEET, Math.max(1, Math.floor((pageHeightMm - A4_SHEET.marginYmm * 2) / labelHeightMm + 1e-9)));
+
+/**
+ * Stacks the labels between the sheet's top and bottom margins, centred on the page. Landscape is the
+ * approved sheet; it turns to portrait only when a label narrow enough for that gets more on the sheet.
+ */
 export function a4Layout(size: LabelSize): A4Layout {
-  const usableHeight = A4_LANDSCAPE.heightMm - A4_LANDSCAPE.marginYmm * 2;
-  const perPage = Math.max(1, Math.floor(usableHeight / size.heightMm + 1e-9));
+  const portraitFits = size.widthMm <= A4_SHEET.shortMm - A4_SHEET.marginXmm * 2;
+  const portrait = portraitFits && labelsPerSheet(A4_SHEET.longMm, size.heightMm) > labelsPerSheet(A4_SHEET.shortMm, size.heightMm);
+  const pageWidthMm = portrait ? A4_SHEET.shortMm : A4_SHEET.longMm;
+  const pageHeightMm = portrait ? A4_SHEET.longMm : A4_SHEET.shortMm;
+  const perPage = labelsPerSheet(pageHeightMm, size.heightMm);
   const stackHeightMm = perPage * size.heightMm;
   return {
+    orientation: portrait ? "portrait" : "landscape",
+    pageWidthMm,
+    pageHeightMm,
     perPage,
-    leftMm: (A4_LANDSCAPE.widthMm - size.widthMm) / 2,
-    topMm: (A4_LANDSCAPE.heightMm - stackHeightMm) / 2,
+    leftMm: (pageWidthMm - size.widthMm) / 2,
+    topMm: (pageHeightMm - stackHeightMm) / 2,
     stackHeightMm
   };
 }

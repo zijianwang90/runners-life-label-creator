@@ -43,6 +43,7 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState<BrandId | "all">("all");
+  const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -94,18 +95,21 @@ export default function App() {
   }, [data]);
 
   const shoes = data?.shoes ?? [];
+  const incompleteIds = useMemo(() => new Set(shoes.filter((shoe) => !validateShoe(shoe).valid).map((shoe) => shoe.id)), [shoes]);
+  // The open label stays listed so it doesn't vanish the moment its last field is fixed.
   const filteredShoes = useMemo(() => shoes.filter((shoe) => {
+    if (incompleteOnly && !incompleteIds.has(shoe.id) && shoe.id !== expandedId) return false;
     const matchesBrand = brandFilter === "all" || shoe.brand === brandFilter;
     const query = search.trim().toLowerCase();
     const matchesSearch = !query || shoe.model.toLowerCase().includes(query) || brandNames[shoe.brand].toLowerCase().includes(query);
     return matchesBrand && matchesSearch;
-  }), [shoes, brandFilter, search]);
+  }), [shoes, brandFilter, search, incompleteOnly, incompleteIds, expandedId]);
   const printCart = data?.printCart ?? [];
   const printQueue = useMemo(() => cartLabels(printCart, shoes), [printCart, shoes]);
   const cartCopiesById = useMemo(() => new Map(printCart.map((item) => [item.id, item.copies])), [printCart]);
   const selectedShoes = useMemo(() => shoes.filter((shoe) => selectedIds.has(shoe.id)), [shoes, selectedIds]);
   const activeShoe = shoes.find((shoe) => shoe.id === activeId) ?? shoes[0] ?? null;
-  const validCount = shoes.filter((shoe) => validateShoe(shoe).valid).length;
+  const validCount = shoes.length - incompleteIds.size;
   const saleCount = shoes.filter((shoe) => shoe.salePrice !== null && shoe.regularPrice !== null && shoe.salePrice < shoe.regularPrice).length;
 
   const updateShoes = (nextShoes: ShoeLabel[]) => setData((current) => current ? { ...current, shoes: nextShoes } : current);
@@ -115,15 +119,24 @@ export default function App() {
   const updateLabelSize = (labelSize: LabelSize) => setData((current) => current ? { ...current, settings: { ...current.settings, labelSize } } : current);
   const updateTextScales = (scales: Partial<TextScales>) => setData((current) => current ? { ...current, settings: { ...current.settings, ...scales } } : current);
 
+  useEffect(() => {
+    if (incompleteIds.size === 0) setIncompleteOnly(false);
+  }, [incompleteIds]);
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setBrandFilter("all");
+    setIncompleteOnly(false);
+  }, []);
+
   const addShoe = useCallback(() => {
     const shoe = createEmptyShoe();
     setData((current) => current ? { ...current, shoes: [...current.shoes, shoe] } : current);
     setActiveId(shoe.id);
     setExpandedId(shoe.id);
-    setSearch("");
-    setBrandFilter("all");
+    clearFilters();
     window.setTimeout(() => document.querySelector<HTMLElement>(`[data-shoe-id="${shoe.id}"] [data-model-input]`)?.focus(), 50);
-  }, []);
+  }, [clearFilters]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -189,22 +202,32 @@ export default function App() {
     if (!invalid) return false;
     setActiveId(invalid.id);
     setExpandedId(invalid.id);
-    setSearch("");
-    setBrandFilter("all");
+    if (!filteredShoes.some((shoe) => shoe.id === invalid.id)) clearFilters();
     showToast(`Complete ${invalid.model || "the highlighted label"} before ${action}.`, "error");
     return true;
   };
 
-  const addShoeToCart = (shoe: ShoeLabel, copies: number) => {
+  const addShoeToCart = (shoe: ShoeLabel) => {
     if (blockIncomplete([shoe], "adding it to the print list")) return;
-    updateCart((cart) => addToCart(cart, shoe.id, copies));
-    showToast(`${copies} × ${shoe.model} added to the print list.`, "success");
+    updateCart((cart) => addToCart(cart, shoe.id, 1));
+    showToast(`${shoe.model} added to the print list.`, "success");
+  };
+
+  /** Adds one copy of each ticked label that is ready; incomplete ones stay ticked for fixing. */
+  const addSelectedToCart = () => {
+    const incomplete = selectedShoes.filter((shoe) => incompleteIds.has(shoe.id));
+    const fresh = selectedShoes.filter((shoe) => !incompleteIds.has(shoe.id) && !cartCopiesById.has(shoe.id));
+    const already = selectedShoes.length - incomplete.length - fresh.length;
+    updateCart((cart) => fresh.reduce((next, shoe) => addToCart(next, shoe.id, 1), cart));
+    setSelectedIds(new Set(incomplete.map((shoe) => shoe.id)));
+    const notes = [already && `${already} already on it`, incomplete.length && `${incomplete.length} need completing`].filter(Boolean).join(", ");
+    showToast(`${fresh.length} label${fresh.length === 1 ? "" : "s"} added to the print list${notes ? ` (${notes})` : ""}.`, fresh.length ? "success" : "info");
   };
 
   function openPrintDialog() {
     if (!data) return;
     if (printQueue.length === 0) {
-      showToast("The print list is empty. Choose the copies on a label and click Add to print list.", "info");
+      showToast("The print list is empty. Click Add to print list on a label.", "info");
       return;
     }
     // Labels can be edited after they were added, so check again.
@@ -270,6 +293,11 @@ export default function App() {
             <select value={brandFilter} onChange={(event) => setBrandFilter(event.target.value as BrandId | "all")}>
               <option value="all">All brands</option>{BRAND_IDS.map((brand) => <option key={brand} value={brand}>{brandNames[brand]}</option>)}
             </select>
+            {(incompleteIds.size > 0 || incompleteOnly) && (
+              <button className={`incomplete-filter ${incompleteOnly ? "is-on" : ""}`} aria-pressed={incompleteOnly} onClick={() => setIncompleteOnly((current) => !current)}>
+                <TriangleAlert size={14} /> {incompleteIds.size} to complete
+              </button>
+            )}
             <span className="result-count">{filteredShoes.length} shown</span>
             <button className="primary-button add-button" onClick={addShoe}><Plus size={17} /> Add shoe</button>
           </div>
@@ -283,11 +311,12 @@ export default function App() {
             cartLabels={printQueue.length}
             cartCopies={cartCopyCount(printCart)}
             onAi={() => setAiOpen(true)}
+            onAddSelected={addSelectedToCart}
             onOpenCart={() => void openPrintDialog()}
           />
 
           <div className="shoe-list">
-            <div className="shoe-list-header" aria-hidden="true"><span /><span>Brand</span><span>Model</span><span>Price</span><span>Copies to print</span><span /></div>
+            <div className="shoe-list-header" aria-hidden="true"><span /><span>Brand</span><span>Model</span><span>Price</span><span>Print list</span><span /></div>
             {filteredShoes.length === 0 ? (
               <div className="empty-state"><Search size={30} /><h3>No matching shoes</h3><p>Clear the filters or add a new shoe label.</p></div>
             ) : filteredShoes.map((shoe) => {
@@ -311,7 +340,8 @@ export default function App() {
                     onDelete={() => deleteShoe(shoe.id)}
                     onMove={(direction) => moveShoe(shoe.id, direction)}
                     cartCopies={cartCopiesById.get(shoe.id) ?? null}
-                    onAddToCart={(copies) => addShoeToCart(shoe, copies)}
+                    onAddToCart={() => addShoeToCart(shoe)}
+                    onCartCopiesChange={(copies) => updateCart((cart) => setCartCopies(cart, shoe.id, copies))}
                     onRemoveFromCart={() => updateCart((cart) => removeFromCart(cart, shoe.id))}
                   />
                 </div>

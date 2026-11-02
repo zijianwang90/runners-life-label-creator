@@ -162,12 +162,34 @@ describe("model name and price text scale", () => {
 
 describe("A4 landscape imposition", () => {
   it("reproduces the approved sheet: eight 220 × 23 mm labels, centred", () => {
-    expect(a4Layout(DEFAULT_LABEL_SIZE)).toEqual({ perPage: 8, leftMm: 38.5, topMm: 13, stackHeightMm: 184 });
+    expect(a4Layout(DEFAULT_LABEL_SIZE)).toEqual({ orientation: "landscape", pageWidthMm: 297, pageHeightMm: 210, perPage: 8, leftMm: 38.5, topMm: 13, stackHeightMm: 184 });
   });
 
   it("fits more short labels and fewer tall ones", () => {
     expect(a4Layout({ widthMm: 160, heightMm: 23 }).perPage).toBe(8);
     expect(a4Layout({ widthMm: 240, heightMm: 30 }).perPage).toBe(6);
+  });
+
+  it("turns to portrait when that fits more: 180 × 30 mm gets eight instead of six, centred", () => {
+    expect(a4Layout({ widthMm: 180, heightMm: 30 })).toEqual({ orientation: "portrait", pageWidthMm: 210, pageHeightMm: 297, perPage: 8, leftMm: 15, topMm: 28.5, stackHeightMm: 240 });
+  });
+
+  it("stays landscape when portrait gains nothing or the label is too wide for it", () => {
+    expect(a4Layout({ widthMm: 160, heightMm: 23 }).orientation).toBe("landscape");
+    expect(a4Layout({ widthMm: 186.1, heightMm: 30 }).orientation).toBe("landscape");
+    expect(a4Layout({ widthMm: 186, heightMm: 30 }).orientation).toBe("portrait");
+  });
+
+  it("never puts more than eight on a sheet", () => {
+    for (let width = LABEL_SIZE_LIMITS.widthMm.min; width <= LABEL_SIZE_LIMITS.widthMm.max; width += 2) {
+      for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 0.5) {
+        const size = clampLabelSize({ widthMm: width, heightMm: height });
+        const layout = a4Layout(size);
+        expect(layout.perPage).toBeLessThanOrEqual(8);
+        expect(layout.topMm).toBeGreaterThanOrEqual(13);
+        expect(layout.leftMm).toBeGreaterThanOrEqual(12);
+      }
+    }
   });
 
   it("leaves room for the crop marks beside the widest label", () => {

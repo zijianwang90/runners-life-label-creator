@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from "electron"
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { AppData, LabelSize, PrintPayload, PrintResult } from "../src/types";
-import { clampLabelSize } from "../src/utils/labelSize";
+import { a4Layout, clampLabelSize } from "../src/utils/labelSize";
 import { Updater } from "./updater";
 
 const UPDATE_CHECK_DELAY_MS = 8_000;
@@ -111,7 +111,7 @@ const payloadLabelSize = (payload: PrintPayload): LabelSize => clampLabelSize(pa
 function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
   const size = payloadLabelSize(payload);
   return {
-    landscape: payload.mode === "a4",
+    landscape: payload.mode === "a4" && a4Layout(size).orientation === "landscape",
     displayHeaderFooter: false,
     printBackground: true,
     scale: 1,

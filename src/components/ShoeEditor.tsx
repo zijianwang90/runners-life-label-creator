@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, ShoppingCart, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, Pencil, ShoppingCart, Trash2, TriangleAlert } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
 import { BRAND_IDS, PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
-import { clampCopies, MAX_COPIES } from "../utils/cart";
 import { EMPTY_SPECS, formatMoney, getPriceState, MAX_SUMMARY_LENGTH, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
+import { QuantityStepper } from "./QuantityStepper";
 
 interface ShoeEditorProps {
   shoe: ShoeLabel;
@@ -23,7 +23,8 @@ interface ShoeEditorProps {
   onMove: (direction: -1 | 1) => void;
   /** Copies of this label on the print list; null when it is not on it. */
   cartCopies: number | null;
-  onAddToCart: (copies: number) => void;
+  onAddToCart: () => void;
+  onCartCopiesChange: (copies: number) => void;
   onRemoveFromCart: () => void;
 }
 
@@ -88,25 +89,25 @@ function SalePercentField({ regularPrice, salePrice, onSalePriceChange }: SalePe
 interface CartRowProps {
   name: string;
   copies: number | null;
-  onAdd: (copies: number) => void;
+  /** An incomplete label can't be added, so the row offers to finish it instead. */
+  complete: boolean;
+  onAdd: () => void;
+  onCopiesChange: (copies: number) => void;
   onRemove: () => void;
+  onComplete: () => void;
 }
 
-/** Each row adds a chosen number of copies; existing copies stay visible without opening the editor. */
-function CartRow({ name, copies, onAdd, onRemove }: CartRowProps) {
-  const [draft, setDraft] = useState(1);
+/** One control per row: Add puts one copy on the print list, then the stepper edits that same count. */
+function CartRow({ name, copies, complete, onAdd, onCopiesChange, onRemove, onComplete }: CartRowProps) {
   return (
-    <div className="shoe-row-cart" onClick={(event) => event.stopPropagation()}>
-      <input aria-label={`${name} print copies`} type="number" min="1" max={MAX_COPIES} value={draft}
-        onChange={(event) => setDraft(clampCopies(event.target.value))} />
-      <div className="shoe-row-cart-main">
-        <button type="button" className="secondary-button" onClick={() => onAdd(draft)}>
-          <ShoppingCart size={14} /> Add to print list
-        </button>
-        <span className="shoe-row-cart-status" aria-live="polite">{copies !== null ? `On the print list · ${copies}` : ""}</span>
-      </div>
-      <button type="button" className="icon-button danger" onClick={onRemove} disabled={copies === null}
-        title="Remove" aria-label={`Remove ${name} from print list`}><X size={14} /></button>
+    <div className={`shoe-row-cart ${copies !== null ? "in-cart" : ""}`} onClick={(event) => event.stopPropagation()}>
+      {copies !== null ? (
+        <QuantityStepper value={copies} name={name} onChange={onCopiesChange} onRemove={onRemove} />
+      ) : complete ? (
+        <button type="button" className="secondary-button" onClick={onAdd}><ShoppingCart size={14} /> Add to print list</button>
+      ) : (
+        <button type="button" className="secondary-button" onClick={onComplete} aria-label={`Complete ${name}`}><Pencil size={14} /> Complete label</button>
+      )}
     </div>
   );
 }
@@ -140,19 +141,22 @@ export function ShoeEditor(props: ShoeEditorProps) {
 
   return (
     <article aria-label={name} className={`shoe-list-item ${props.active ? "is-active" : ""} ${props.expanded ? "is-expanded" : ""}`}>
-      <div className="shoe-summary">
-        <input type="checkbox" checked={props.selected} onChange={(event) => props.onSelect(event.target.checked)} aria-label={`Select ${name}`} />
+      <div className="shoe-summary" onClick={props.onActivate}>
+        <input type="checkbox" checked={props.selected} onClick={(event) => event.stopPropagation()} onChange={(event) => props.onSelect(event.target.checked)} aria-label={`Select ${name}`} />
         <img className="shoe-brand-logo" src={brandLogos[shoe.brand]} alt={brandNames[shoe.brand]} />
-        <button ref={modelButton} type="button" className="shoe-model-toggle" onClick={toggle} aria-expanded={props.expanded} aria-controls={editorId}>{shoe.model || "SHOE MODEL"}</button>
+        <div className="shoe-model-cell">
+          <button ref={modelButton} type="button" className="shoe-model-name" aria-pressed={props.active} title="Show in the preview; double-click to edit" onDoubleClick={props.onToggle}>{shoe.model || "SHOE MODEL"}</button>
+          {!validation.valid && !props.expanded && <small className="shoe-row-issue"><TriangleAlert size={12} /> {validation.errors[0]}</small>}
+        </div>
         <div className={`shoe-summary-price ${priceState}`}>
           <strong>{formatMoney(priceState === "sale" ? shoe.salePrice : shoe.regularPrice, props.currencySymbol)}</strong>
           {priceState === "sale" && <del>{formatMoney(shoe.regularPrice, props.currencySymbol)}</del>}
         </div>
-        <CartRow name={name} copies={props.cartCopies} onAdd={props.onAddToCart} onRemove={props.onRemoveFromCart} />
-        <button type="button" className="icon-button" onClick={toggle} aria-expanded={props.expanded} aria-controls={editorId}
+        <CartRow name={name} copies={props.cartCopies} complete={validation.valid} onAdd={props.onAddToCart} onCopiesChange={props.onCartCopiesChange} onRemove={props.onRemoveFromCart} onComplete={toggle} />
+        <button type="button" className="icon-button" onClick={(event) => { event.stopPropagation(); toggle(); }} aria-expanded={props.expanded} aria-controls={editorId}
           aria-label={`${props.expanded ? "Close" : "Edit"} ${name}`}>{props.expanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</button>
       </div>
-      {props.expanded && <div className="shoe-details" id={editorId}>
+      {props.expanded && <div className="shoe-details" id={editorId} onFocusCapture={props.onActivate}>
         <div className="shoe-editor-tabs" role="tablist" aria-label={`Edit ${name}`} onKeyDown={(event) => {
           if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
           event.preventDefault();

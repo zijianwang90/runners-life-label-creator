@@ -23,7 +23,8 @@ export function PrintDialog(props: PrintDialogProps) {
   if (!props.open) return null;
   const copies = expandLabelCopies(props.shoes).length;
   const size = props.settings.labelSize;
-  const perSheet = a4Layout(size).perPage;
+  const sheet = a4Layout(size);
+  const perSheet = sheet.perPage;
   const sizeText = formatLabelSize(size);
   const update = (patch: Partial<AppSettings>) => props.onSettingsChange({ ...props.settings, ...patch });
   const updateCalibration = (patch: Partial<AppSettings["calibration"]>) => update({ calibration: { ...props.settings.calibration, ...patch } });
@@ -68,7 +69,7 @@ export function PrintDialog(props: PrintDialogProps) {
             <legend>Paper layout</legend>
             <label className={props.settings.printMode === "a4" ? "selected" : ""}>
               <input type="radio" name="mode" checked={props.settings.printMode === "a4"} onChange={() => update({ printMode: "a4" })} />
-              <strong>A4 landscape</strong><span>{perSheet} labels per sheet with crop marks</span>
+              <strong>A4 {sheet.orientation}</strong><span>{perSheet} labels per sheet with crop marks</span>
             </label>
             <label className={props.settings.printMode === "custom" ? "selected" : ""}>
               <input type="radio" name="mode" checked={props.settings.printMode === "custom"} onChange={() => update({ printMode: "custom" })} />

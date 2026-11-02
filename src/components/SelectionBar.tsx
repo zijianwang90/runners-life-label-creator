@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ShoppingCart, Sparkles } from "lucide-react";
+import { ListPlus, ShoppingCart, Sparkles } from "lucide-react";
 
 interface SelectionBarProps {
   shownCount: number;
@@ -12,10 +12,11 @@ interface SelectionBarProps {
   cartLabels: number;
   cartCopies: number;
   onAi: () => void;
+  onAddSelected: () => void;
   onOpenCart: () => void;
 }
 
-/** AI tools for ticked labels and the print list itself. */
+/** What works on the ticked labels (AI selling points, adding them to the print list) and the print list itself. */
 export function SelectionBar(props: SelectionBarProps) {
   const checkbox = useRef<HTMLInputElement>(null);
   const allShown = props.shownCount > 0 && props.selectedShownCount === props.shownCount;
@@ -39,6 +40,11 @@ export function SelectionBar(props: SelectionBarProps) {
         <button className="secondary-button" onClick={props.onAi} title="Write the three selling points with an AI tool">
           <Sparkles size={16} /> AI selling points
         </button>
+        {props.selectedCount > 0 && (
+          <button className="secondary-button" onClick={props.onAddSelected} title="Add one copy of each ticked label to the print list">
+            <ListPlus size={16} /> Add {props.selectedCount} to print list
+          </button>
+        )}
         <button
           className="primary-button"
           disabled={props.cartLabels === 0}

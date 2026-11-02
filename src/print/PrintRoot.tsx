@@ -99,12 +99,13 @@ export function PrintRoot() {
   if (!job) return <div className="print-loading">Preparing print document…</div>;
   const { payload } = job;
   const size = clampLabelSize(payload.labelSize);
-  const sizeVars = { "--label-w": `${size.widthMm}mm`, "--label-h": `${size.heightMm}mm` } as CSSProperties;
+  const sheet = a4Layout(size);
+  const sizeVars = { "--label-w": `${size.widthMm}mm`, "--label-h": `${size.heightMm}mm`, "--page-w": `${sheet.pageWidthMm}mm`, "--page-h": `${sheet.pageHeightMm}mm` } as CSSProperties;
   return (
     <div className={`print-document mode-${payload.mode}`} style={sizeVars}>
       <style>{payload.mode === "custom"
         ? `@page { size: ${size.widthMm}mm ${size.heightMm}mm; margin: 0; }`
-        : "@page { size: A4 landscape; margin: 0; }"}</style>
+        : `@page { size: A4 ${sheet.orientation}; margin: 0; }`}</style>
       {payload.kind === "calibration" ? <CalibrationDocument payload={payload} size={size} />
         : payload.mode === "custom" ? <CustomLabels labels={labels} payload={payload} size={size} />
           : <A4Labels labels={labels} payload={payload} size={size} />}

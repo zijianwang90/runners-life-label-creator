@@ -67,6 +67,17 @@ describe("print document at other label sizes", () => {
     expect(root.style.getPropertyValue("--label-h")).toBe("28mm");
   });
 
+  it("prints 180 × 30 mm on portrait sheets of eight", () => {
+    const { container } = renderJob({ labelSize: { widthMm: 180, heightMm: 30 } });
+    const pages = container.querySelectorAll(".a4-print-page");
+    expect([...pages].map((page) => page.querySelectorAll(".a4-label-slot").length)).toEqual([8, 5]);
+    const stack = pages[0].querySelector<HTMLElement>(".a4-label-stack")!;
+    expect(stack.style.left).toBe("15mm");
+    expect(stack.style.top).toBe("28.5mm");
+    expect(container.querySelector("style")!.textContent).toContain("size: A4 portrait");
+    expect(container.querySelector<HTMLElement>(".print-document")!.style.getPropertyValue("--page-w")).toBe("210mm");
+  });
+
   it("sets the page size of single-label printing to the label size", () => {
     const { container } = renderJob({ mode: "custom", labelSize: { widthMm: 200, heightMm: 25 }, labels: [shoe("a", 3)] });
     expect(container.querySelector("style")!.textContent).toContain("size: 200mm 25mm");

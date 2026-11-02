@@ -8,7 +8,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - Edit brand, model, regular price, optional sale price, and zero to three optional selling points.
 - **Who it's for** (optional): one line, up to 60 characters, printed in red right under the model name so a shopper sees in a second which runner the shoe suits, e.g. `FOR RUNNERS CHASING A FASTER TEMPO`. Labels without it look exactly as before.
 - **Specs row** (optional): heel and forefoot stack height, weight and plate (carbon / nylon / TPU / Pebax). Filled-in specs print as a smaller second row under the selling points, e.g. `STACK 39/31 MM • 245 G • CARBON PLATE`; labels without specs look exactly as before.
-- **Print list (cart)**: on any row, pick how many copies to print and click `Add to print list` without expanding the editor or ticking a checkbox. Checkboxes are used for AI selling points. Adding a label that is already on the list adds to its copies. `Print list` shows every waiting label, where copies can still be changed or a label removed, before the PDF is made. The list is saved with your labels and is emptied once its PDF has been created.
+- **Print list (cart)**: click `Add to print list` on any row for one copy, then set the copies with that row's stepper; going below 1 removes the label. Tick several labels to add one copy of each at once (incomplete ones stay ticked). Click a row to see it in the preview without opening the editor; a row with something missing says what, and `N to complete` lists only those.
 - Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
 - Everything is saved automatically on this computer; there is nothing to import or export.
 - **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6:1–10.5:1 (so 180 × 30 mm is the squarest), the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
@@ -16,7 +16,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - **Sale %**: type a discount (e.g. 25) instead of a sale price and the sale price is worked out to the cent; typing a sale price updates the percent.
 - **AI selling points**: tick labels, click `AI selling points`, copy the generated prompt into any AI tool (ChatGPT, Claude, Gemini…), paste its reply back and review it. Each label gets three selling points: shoe type (race / stability / neutral…), heel-to-toe drop, and the midsole foam technology (the brand's official foam name, e.g. PWRRUN PB, never marketing wording). The same reply also writes the one-line "who it's for" summary and fills the specs row (stack heights, weight, plate); anything the AI does not know keeps the label's current value. Low-confidence answers are unticked and flagged so specs can be checked before printing.
 - Printing is one click: the app renders the exact A4 or label-size print layout to a PDF and shows it selected in File Explorer / Finder (it is not opened, so a slow default viewer such as Acrobat never starts); drag it into Chrome, pick the printer and print yourself. The app never talks to a printer driver, so it works with any printer.
-- Print one 220 × 23 mm label per page, or eight labels on an A4 landscape sheet with crop marks.
+- Print one 220 × 23 mm label per page, or up to eight labels on an A4 sheet with crop marks. The sheet is landscape, and turns portrait when a label is narrow enough (up to 186 mm) and that fits more on it: 180 × 30 mm gets eight instead of six.
 - Per-printer X/Y scale and offset calibration, including a calibration test page.
 
 The visual rules and adjustable SVG values are documented in [docs/label-design-system.md](docs/label-design-system.md) and [design/label-design-system.json](design/label-design-system.json).
@@ -96,7 +96,7 @@ Tick **Publish as a pre-release** to try a release first: the updater ignores pr
 
 ## Printing setup
 
-1. Choose `A4 landscape` for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
+1. Choose the A4 layout for ordinary office printers or the label-size option (`220 × 23 mm` by default, or the size you set) for a printer whose driver supports that custom media size.
 2. Click **Create PDF to print**. The PDF is shown selected in File Explorer / Finder; drag it into Chrome, choose your printer and print.
 3. In Chrome's print dialog open **More settings → Scale** and choose **Default** (prints the PDF at 100%). *Fit to printable area* or *Fit to paper* shrinks the whole page by about 6% (a 170 × 25 mm label prints near 160 × 23 mm). For the A4 layout, check that Paper size is A4, not Letter. Leave the margins at their defaults.
 4. Open the calibration PDF, print it, measure the outer frame, then enter small width/height and X/Y corrections if necessary. Calibration corrections are separate from the label size setting.

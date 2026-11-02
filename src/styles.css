@@ -160,6 +160,8 @@ button { border: 0; }
 .list-toolbar > select { height: 36px; padding: 0 30px 0 10px; border: 1px solid #d6d8dc; border-radius: 6px; background: #fff; }
 .result-count { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .add-button { margin-left: auto; white-space: nowrap; }
+.incomplete-filter { height: 36px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: #8a0013; background: #fff; border: 1px solid #efb5bd; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.incomplete-filter.is-on { color: #fff; background: var(--red); border-color: var(--red); }
 
 .editor-grid { display: grid; gap: 10px; }
 .editor-grid-primary { grid-template-columns: 150px minmax(210px, 1.8fr) minmax(115px, .7fr) minmax(115px, .7fr) 82px; }
@@ -409,7 +411,7 @@ fieldset { min-width: 0; }
 .custom-print-page:last-child { break-after: auto; page-break-after: auto; }
 .calibrated-label { width: var(--label-w, 220mm); height: var(--label-h, 23mm); }
 .calibrated-label > .label-svg { width: var(--label-w, 220mm); height: var(--label-h, 23mm); }
-.a4-print-page { position: relative; width: 297mm; height: 210mm; overflow: hidden; break-after: page; page-break-after: always; background: #fff; }
+.a4-print-page { position: relative; width: var(--page-w, 297mm); height: var(--page-h, 210mm); overflow: hidden; break-after: page; page-break-after: always; background: #fff; }
 .a4-print-page:last-child { break-after: auto; page-break-after: auto; }
 .a4-label-stack { position: absolute; left: 38.5mm; top: 13mm; width: var(--label-w, 220mm); height: 184mm; }
 .a4-label-slot { position: relative; width: var(--label-w, 220mm); height: var(--label-h, 23mm); }
@@ -424,9 +426,9 @@ fieldset { min-width: 0; }
 .measure-width { position: absolute; left: calc(var(--label-w, 220mm) / 2 - 9mm); bottom: 1mm; font: 6pt monospace; }
 .measure-height { position: absolute; right: 1mm; top: 8mm; font: 6pt monospace; writing-mode: vertical-rl; }
 .hundred-mm-line { position: absolute; left: 8mm; bottom: 3mm; width: 100mm; border-top: .2mm solid #000; text-align: center; font: 5pt monospace; }
-.a4-calibration .calibration-frame { position: absolute; left: calc((297mm - var(--label-w, 220mm)) / 2); top: 40mm; }
+.a4-calibration .calibration-frame { position: absolute; left: calc((var(--page-w, 297mm) - var(--label-w, 220mm)) / 2); top: 40mm; }
 .hundred-mm-ruler { position: absolute; left: 70mm; top: 100mm; width: 100mm; display: flex; justify-content: space-between; border-top: .35mm solid #000; font: 7pt monospace; }
-.a4-calibration > p { position: absolute; left: calc((297mm - var(--label-w, 220mm)) / 2); top: 120mm; width: var(--label-w, 220mm); font: 8pt "Segoe UI", sans-serif; }
+.a4-calibration > p { position: absolute; left: calc((var(--page-w, 297mm) - var(--label-w, 220mm)) / 2); top: 120mm; width: var(--label-w, 220mm); font: 8pt "Segoe UI", sans-serif; }
 
 @media (max-width: 1290px) {
   .workspace { grid-template-columns: minmax(0, 1fr) 360px; padding: 14px; gap: 14px; }
@@ -467,29 +469,29 @@ fieldset { min-width: 0; }
 .shoe-list { margin: 0; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .shoe-list > div { flex-shrink: 0; }
 .shoe-list-header,
-.shoe-summary { display: grid; grid-template-columns: 18px 64px minmax(100px, 1fr) 82px 224px 28px; align-items: center; gap: 8px; padding: 0 12px; }
+.shoe-summary { display: grid; grid-template-columns: 18px 64px minmax(100px, 1fr) 82px 136px 28px; align-items: center; gap: 8px; padding: 0 12px; }
 .shoe-list-header { position: sticky; top: 0; z-index: 2; min-height: 34px; color: var(--muted); background: #f7f7f8; border-bottom: 1px solid var(--line); font-size: 10px; font-weight: 700; }
 .shoe-list-header > :nth-child(4) { text-align: right; }
 .shoe-list-header > :nth-child(5) { text-align: center; }
 .shoe-list-item { border-bottom: 1px solid var(--line); }
 .shoe-list > div:last-child .shoe-list-item { border-bottom: 0; }
-.shoe-summary { min-height: 60px; }
+.shoe-summary { min-height: 60px; cursor: pointer; }
+.shoe-summary:hover { background: #fafafb; }
 .shoe-summary > input { width: 15px; height: 15px; margin: 0; accent-color: var(--red); }
 .shoe-brand-logo { display: block; width: 60px; height: 24px; object-fit: contain; }
-.shoe-model-toggle { align-self: stretch; min-width: 0; padding: 7px 0; color: #202126; background: transparent; text-align: left; overflow-wrap: anywhere; font-size: 12px; font-weight: 700; }
+.shoe-model-cell { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 0; }
+.shoe-model-name { max-width: 100%; color: #202126; background: transparent; text-align: left; overflow-wrap: anywhere; cursor: pointer; font-size: 12px; font-weight: 700; }
+.shoe-row-issue { display: inline-flex; align-items: center; gap: 4px; color: var(--red); font-size: 11px; line-height: 1.3; }
+.shoe-row-issue svg { flex: none; }
 .shoe-summary-price { display: flex; flex-direction: column; gap: 2px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .shoe-summary-price strong { font-size: 12px; }
 .shoe-summary-price del { color: var(--muted); font-size: 10px; }
 .shoe-summary-price.sale strong { color: var(--red); }
 .shoe-list-item.is-active .shoe-summary { background: #fff9fa; }
 .shoe-list-item.is-expanded { box-shadow: inset 3px 0 var(--red); }
-.shoe-row-cart { display: grid; grid-template-columns: 42px minmax(0, 1fr) 23px; gap: 5px; align-items: center; }
-.shoe-row-cart > input { min-width: 0; width: 100%; height: 30px; padding: 0 3px; color: #202126; background: #fff; border: 1px solid #d8dadd; border-radius: 5px; text-align: center; font-size: 12px; }
-.shoe-row-cart-main { padding: 5px 0; display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
-.shoe-row-cart-main .secondary-button { min-height: 29px; padding: 0 6px; gap: 4px; font-size: 10px; white-space: nowrap; }
-.shoe-row-cart-status { min-height: 13px; color: var(--green); font-size: 9px; text-align: center; }
-.shoe-row-cart > .icon-button { width: 23px; height: 28px; }
-.shoe-row-cart > .icon-button:disabled { visibility: hidden; }
+.shoe-row-cart .secondary-button { width: 100%; min-height: 30px; padding: 0 6px; gap: 4px; font-size: 11px; white-space: nowrap; }
+.shoe-row-cart .quantity-stepper { height: 30px; grid-template-columns: 30px 1fr 30px; }
+.shoe-row-cart.in-cart .quantity-stepper { border-color: var(--red); }
 .shoe-details { padding: 0 22px 16px 38px; background: #fafafb; border-top: 1px solid var(--line); }
 .shoe-editor-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
 .shoe-editor-tabs button { padding: 12px 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font-size: 12px; font-weight: 700; }
@@ -515,5 +517,5 @@ fieldset { min-width: 0; }
 @media (max-width: 1290px) {
   .workspace { grid-template-columns: minmax(0, 1fr) 310px; }
   .shoe-list-header,
-  .shoe-summary { grid-template-columns: 18px 60px minmax(100px, 1fr) 78px 216px 26px; gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .shoe-summary { grid-template-columns: 18px 60px minmax(100px, 1fr) 78px 136px 26px; gap: 6px; padding-left: 10px; padding-right: 10px; }
 }
