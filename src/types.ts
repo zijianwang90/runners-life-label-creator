@@ -1,7 +1,9 @@
 export const BRAND_IDS = ["new-balance", "saucony", "asics", "brooks"] as const;
 
 export type BrandId = (typeof BRAND_IDS)[number];
+/** "a4" is the sheet mode: several labels on one sheet of the chosen paper (Letter or A4); the name predates Letter. */
 export type PrintMode = "custom" | "a4";
+export type PaperSize = "letter" | "a4";
 export type PriceState = "regular" | "sale";
 
 export const PLATE_TYPES = ["carbon", "nylon", "tpu", "pebax"] as const;
@@ -52,6 +54,8 @@ export interface AppSettings {
   currencySymbol: string;
   giftCertificateSigner: string;
   printMode: PrintMode;
+  /** Paper the sheet mode prints on. */
+  paperSize: PaperSize;
   labelSize: LabelSize;
   /** Size of the model name relative to the approved design (1 = approved). */
   modelTextScale: number;
@@ -85,6 +89,7 @@ export interface PrintPayload {
   kind: "labels" | "calibration";
   labels: ShoeLabel[];
   mode: PrintMode;
+  paperSize: PaperSize;
   currencySymbol: string;
   labelSize: LabelSize;
   modelTextScale: number;

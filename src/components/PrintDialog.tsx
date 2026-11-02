@@ -1,7 +1,7 @@
 import { FileDown, Printer, Ruler, Trash2, X } from "lucide-react";
 import type { AppSettings, ShoeLabel } from "../types";
 import { expandLabelCopies } from "../utils/labels";
-import { a4Layout, formatLabelSize } from "../utils/labelSize";
+import { formatLabelSize, PAPER_SIZES, sheetLayout } from "../utils/labelSize";
 import { LabelSvg, labelScaleProps } from "./LabelSvg";
 import { QuantityStepper } from "./QuantityStepper";
 
@@ -23,7 +23,9 @@ export function PrintDialog(props: PrintDialogProps) {
   if (!props.open) return null;
   const copies = expandLabelCopies(props.shoes).length;
   const size = props.settings.labelSize;
-  const perSheet = a4Layout(size).perPage;
+  const paperName = PAPER_SIZES[props.settings.paperSize].name;
+  const sheet = sheetLayout(size, props.settings.paperSize);
+  const perSheet = sheet.perPage;
   const sizeText = formatLabelSize(size);
   const update = (patch: Partial<AppSettings>) => props.onSettingsChange({ ...props.settings, ...patch });
   const updateCalibration = (patch: Partial<AppSettings["calibration"]>) => update({ calibration: { ...props.settings.calibration, ...patch } });
@@ -40,7 +42,7 @@ export function PrintDialog(props: PrintDialogProps) {
         <div className="print-summary">
           <div><strong>{props.shoes.length}</strong><span>shoe models</span></div>
           <div><strong>{copies}</strong><span>physical labels</span></div>
-          <div><strong>{props.settings.printMode === "a4" ? Math.ceil(copies / perSheet) : copies}</strong><span>{props.settings.printMode === "a4" ? "A4 sheets" : "print pages"}</span></div>
+          <div><strong>{props.settings.printMode === "a4" ? Math.ceil(copies / perSheet) : copies}</strong><span>{props.settings.printMode === "a4" ? `${paperName} sheets` : "print pages"}</span></div>
         </div>
 
         <div className="modal-body">
@@ -68,15 +70,24 @@ export function PrintDialog(props: PrintDialogProps) {
             <legend>Paper layout</legend>
             <label className={props.settings.printMode === "a4" ? "selected" : ""}>
               <input type="radio" name="mode" checked={props.settings.printMode === "a4"} onChange={() => update({ printMode: "a4" })} />
-              <strong>A4 landscape</strong><span>{perSheet} labels per sheet with crop marks</span>
+              <strong>{paperName} {sheet.orientation}</strong><span>{perSheet} labels per sheet with crop marks</span>
             </label>
             <label className={props.settings.printMode === "custom" ? "selected" : ""}>
               <input type="radio" name="mode" checked={props.settings.printMode === "custom"} onChange={() => update({ printMode: "custom" })} />
               <strong>{sizeText}</strong><span>One label per page for label printers</span>
             </label>
           </fieldset>
+          {props.settings.printMode === "a4" && (
+            <label className="paper-row">
+              <span>Paper in the printer</span>
+              <select value={props.settings.paperSize} onChange={(event) => update({ paperSize: event.target.value === "a4" ? "a4" : "letter" })}>
+                <option value="letter">Letter (8½ × 11 in)</option>
+                <option value="a4">A4 (210 × 297 mm)</option>
+              </select>
+            </label>
+          )}
 
-          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Saves a PDF, then you print</strong><small>The PDF is shown selected in its folder. Drag it into Chrome and choose your printer. Then open <b>More settings → Scale</b> and pick <b>Default</b> (100%). “Fit to printable area” or “Fit to paper” prints everything about 6% smaller (a 170 mm label comes out near 160 mm). Paper size: A4.</small></span></div>
+          <div className="pdf-save-note"><FileDown size={17} /><span><strong>Saves a PDF, then you print</strong><small>The PDF is shown selected in its folder. Drag it into Chrome and choose your printer. Then open <b>More settings → Scale</b> and pick <b>Default</b> (100%). “Fit to printable area” or “Fit to paper” prints everything about 6% smaller (a 170 mm label comes out near 160 mm). Paper size: {paperName}.</small></span></div>
 
           <details className="calibration-box">
             <summary><Ruler size={17} /> Printer calibration</summary>

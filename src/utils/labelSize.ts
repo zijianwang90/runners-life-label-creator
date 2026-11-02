@@ -1,4 +1,4 @@
-import type { LabelSize } from "../types";
+import type { LabelSize, PaperSize } from "../types";
 
 /** The approved Scheme A label. */
 export const DEFAULT_LABEL_SIZE: LabelSize = { widthMm: 220, heightMm: 23 };
@@ -72,7 +72,14 @@ export function textPrintSize(kind: TextKind, scale: number, heightMm: number): 
 
 export const featureTextPrintSize = (scale: number, heightMm: number) => textPrintSize("feature", scale, heightMm);
 
-export const A4_LANDSCAPE = { widthMm: 297, heightMm: 210, marginYmm: 13 } as const;
+export const PAPER_SIZES: Record<PaperSize, { name: string; shortMm: number; longMm: number }> = {
+  letter: { name: "Letter", shortMm: 215.9, longMm: 279.4 },
+  a4: { name: "A4", shortMm: 210, longMm: 297 }
+};
+/** `xMm` keeps the crop marks beside the label clear of the edge a printer can't reach. */
+export const SHEET_MARGIN = { xMm: 12, yMm: 13 } as const;
+/** The approved sheet holds eight; a sheet never takes more, which also leaves room if it is printed on Letter. */
+export const MAX_LABELS_PER_SHEET = 8;
 
 export interface Range { min: number; max: number }
 export interface LabelSizeRanges { widthMm: Range; heightMm: Range }
@@ -144,23 +151,40 @@ export const isDefaultLabelSize = (size: LabelSize) =>
 export const formatMm = (value: number): string => String(roundTenth(value));
 export const formatLabelSize = (size: LabelSize): string => `${formatMm(size.widthMm)} × ${formatMm(size.heightMm)} mm`;
 
-export interface A4Layout {
-  /** Labels stacked on one landscape sheet. */
+export interface SheetLayout {
+  orientation: "landscape" | "portrait";
+  pageWidthMm: number;
+  pageHeightMm: number;
+  /** Labels stacked on one sheet. */
   perPage: number;
   leftMm: number;
   topMm: number;
   stackHeightMm: number;
 }
 
-/** Stacks as many labels as fit between the sheet's top and bottom margins, centred on the page. */
-export function a4Layout(size: LabelSize): A4Layout {
-  const usableHeight = A4_LANDSCAPE.heightMm - A4_LANDSCAPE.marginYmm * 2;
-  const perPage = Math.max(1, Math.floor(usableHeight / size.heightMm + 1e-9));
+const labelsPerSheet = (pageHeightMm: number, labelHeightMm: number): number =>
+  Math.min(MAX_LABELS_PER_SHEET, Math.max(1, Math.floor((pageHeightMm - SHEET_MARGIN.yMm * 2) / labelHeightMm + 1e-9)));
+const roundHundredth = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * Stacks the labels between the sheet's top and bottom margins, centred on the page. Landscape is the
+ * approved sheet; it turns to portrait only when a label narrow enough for that gets more on the sheet.
+ */
+export function sheetLayout(size: LabelSize, paper: PaperSize): SheetLayout {
+  const { shortMm, longMm } = PAPER_SIZES[paper];
+  const portraitFits = size.widthMm <= shortMm - SHEET_MARGIN.xMm * 2;
+  const portrait = portraitFits && labelsPerSheet(longMm, size.heightMm) > labelsPerSheet(shortMm, size.heightMm);
+  const pageWidthMm = portrait ? shortMm : longMm;
+  const pageHeightMm = portrait ? longMm : shortMm;
+  const perPage = labelsPerSheet(pageHeightMm, size.heightMm);
   const stackHeightMm = perPage * size.heightMm;
   return {
+    orientation: portrait ? "portrait" : "landscape",
+    pageWidthMm,
+    pageHeightMm,
     perPage,
-    leftMm: (A4_LANDSCAPE.widthMm - size.widthMm) / 2,
-    topMm: (A4_LANDSCAPE.heightMm - stackHeightMm) / 2,
+    leftMm: roundHundredth((pageWidthMm - size.widthMm) / 2),
+    topMm: roundHundredth((pageHeightMm - stackHeightMm) / 2),
     stackHeightMm
   };
 }

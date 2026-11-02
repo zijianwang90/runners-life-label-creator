@@ -24,7 +24,7 @@ function Harness({ initial }: { initial: Partial<ShoeLabel> }) {
   const [shoe, setShoe] = useState<ShoeLabel>({ ...base, ...initial });
   return (
     <ShoeEditor
-      shoe={shoe} index={0} selected={false} active canMoveUp={false} canMoveDown={false}
+      shoe={shoe} index={0} selected={false} active expanded currencySymbol="$" onToggle={() => undefined} canMoveUp={false} canMoveDown={false}
       onSelect={() => undefined} onActivate={() => undefined} onChange={setShoe}
       onDuplicate={() => undefined} onDelete={() => undefined} onMove={() => undefined}
       cartCopies={null} onAddToCart={() => undefined} onCartCopiesChange={() => undefined} onRemoveFromCart={() => undefined}
@@ -83,7 +83,7 @@ describe("specs", () => {
   it("flags a weight typed in ounces", () => {
     render(<Harness initial={{}} />);
     fireEvent.change(input(/weight/i), { target: { value: "8.6" } });
-    expect(screen.getByText(/Weight is in grams/)).toBeTruthy();
+    expect(screen.getAllByText(/Weight is in grams/)).toHaveLength(2);
   });
 });
 
@@ -97,6 +97,6 @@ describe("summary", () => {
 
   it("flags a summary that is too long", () => {
     render(<Harness initial={{ summary: "x".repeat(61) }} />);
-    expect(screen.getByText(/Keep the summary to 60 characters/)).toBeTruthy();
+    expect(screen.getAllByText(/Keep the summary to 60 characters/)).toHaveLength(2);
   });
 });

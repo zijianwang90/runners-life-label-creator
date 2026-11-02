@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  a4Layout,
+  sheetLayout,
   changeLabelSize,
   clampFeatureScale,
   clampLabelSize,
@@ -162,16 +162,53 @@ describe("model name and price text scale", () => {
 
 describe("A4 landscape imposition", () => {
   it("reproduces the approved sheet: eight 220 × 23 mm labels, centred", () => {
-    expect(a4Layout(DEFAULT_LABEL_SIZE)).toEqual({ perPage: 8, leftMm: 38.5, topMm: 13, stackHeightMm: 184 });
+    expect(sheetLayout(DEFAULT_LABEL_SIZE, "a4")).toEqual({ orientation: "landscape", pageWidthMm: 297, pageHeightMm: 210, perPage: 8, leftMm: 38.5, topMm: 13, stackHeightMm: 184 });
   });
 
   it("fits more short labels and fewer tall ones", () => {
-    expect(a4Layout({ widthMm: 160, heightMm: 23 }).perPage).toBe(8);
-    expect(a4Layout({ widthMm: 240, heightMm: 30 }).perPage).toBe(6);
+    expect(sheetLayout({ widthMm: 160, heightMm: 23 }, "a4").perPage).toBe(8);
+    expect(sheetLayout({ widthMm: 240, heightMm: 30 }, "a4").perPage).toBe(6);
+  });
+
+  it("turns to portrait when that fits more: 180 × 30 mm gets eight instead of six, centred", () => {
+    expect(sheetLayout({ widthMm: 180, heightMm: 30 }, "a4")).toEqual({ orientation: "portrait", pageWidthMm: 210, pageHeightMm: 297, perPage: 8, leftMm: 15, topMm: 28.5, stackHeightMm: 240 });
+  });
+
+  it("stays landscape when portrait gains nothing or the label is too wide for it", () => {
+    expect(sheetLayout({ widthMm: 160, heightMm: 23 }, "a4").orientation).toBe("landscape");
+    expect(sheetLayout({ widthMm: 186.1, heightMm: 30 }, "a4").orientation).toBe("landscape");
+    expect(sheetLayout({ widthMm: 186, heightMm: 30 }, "a4").orientation).toBe("portrait");
+  });
+
+  it("lays out Letter sheets: 220 × 23 mm landscape, 180 × 30 mm portrait, both eight", () => {
+    expect(sheetLayout(DEFAULT_LABEL_SIZE, "letter")).toEqual({ orientation: "landscape", pageWidthMm: 279.4, pageHeightMm: 215.9, perPage: 8, leftMm: 29.7, topMm: 15.95, stackHeightMm: 184 });
+    expect(sheetLayout({ widthMm: 180, heightMm: 30 }, "letter")).toEqual({ orientation: "portrait", pageWidthMm: 215.9, pageHeightMm: 279.4, perPage: 8, leftMm: 17.95, topMm: 19.7, stackHeightMm: 240 });
+  });
+
+  it("keeps the stack inside the top and bottom margins on either paper", () => {
+    for (const paper of ["letter", "a4"] as const) {
+      for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 1) {
+        const layout = sheetLayout(clampLabelSize({ widthMm: 180, heightMm: height }), paper);
+        expect(layout.topMm + layout.stackHeightMm).toBeLessThanOrEqual(layout.pageHeightMm - 13);
+        expect(layout.topMm).toBeGreaterThanOrEqual(13);
+      }
+    }
+  });
+
+  it("never puts more than eight on a sheet", () => {
+    for (let width = LABEL_SIZE_LIMITS.widthMm.min; width <= LABEL_SIZE_LIMITS.widthMm.max; width += 2) {
+      for (let height = LABEL_SIZE_LIMITS.heightMm.min; height <= LABEL_SIZE_LIMITS.heightMm.max; height += 0.5) {
+        const size = clampLabelSize({ widthMm: width, heightMm: height });
+        const layout = sheetLayout(size, "letter");
+        expect(layout.perPage).toBeLessThanOrEqual(8);
+        expect(layout.topMm).toBeGreaterThanOrEqual(13);
+        expect(layout.leftMm).toBeGreaterThanOrEqual(12);
+      }
+    }
   });
 
   it("leaves room for the crop marks beside the widest label", () => {
-    const { leftMm } = a4Layout({ widthMm: LABEL_SIZE_LIMITS.widthMm.max, heightMm: 30 });
+    const { leftMm } = sheetLayout({ widthMm: LABEL_SIZE_LIMITS.widthMm.max, heightMm: 30 }, "a4");
     expect(leftMm).toBeGreaterThanOrEqual(6.5);
   });
 });

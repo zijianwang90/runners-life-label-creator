@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import type { AppData, LabelSize, PrintJobPayload, PrintPayload, PrintResult } from "../src/types";
-import { clampLabelSize } from "../src/utils/labelSize";
+import { clampLabelSize, sheetLayout } from "../src/utils/labelSize";
 import { certificateError } from "../src/utils/giftCertificate";
 import { Updater } from "./updater";
 
@@ -109,6 +109,7 @@ function createMainWindow(): void {
 
 // The payload comes from the renderer; never trust it for the physical page size.
 const payloadLabelSize = (payload: PrintPayload): LabelSize => clampLabelSize(payload.labelSize);
+const payloadPaper = (payload: PrintPayload) => payload.paperSize === "a4" ? "a4" : "letter";
 
 function pdfOptions(payload: PrintJobPayload): Electron.PrintToPDFOptions {
   if (payload.kind === "gift-certificate") return {
@@ -122,14 +123,14 @@ function pdfOptions(payload: PrintJobPayload): Electron.PrintToPDFOptions {
   };
   const size = payloadLabelSize(payload);
   return {
-    landscape: payload.mode === "a4",
+    landscape: payload.mode === "a4" && sheetLayout(size, payloadPaper(payload)).orientation === "landscape",
     displayHeaderFooter: false,
     printBackground: true,
     scale: 1,
     margins: { marginType: "none" },
     pageSize: payload.mode === "custom"
       ? { width: size.widthMm / 25.4, height: size.heightMm / 25.4 }
-      : "A4",
+      : payloadPaper(payload) === "a4" ? "A4" : "Letter",
     preferCSSPageSize: true
   };
 }
