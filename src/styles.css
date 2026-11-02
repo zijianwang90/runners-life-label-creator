@@ -73,7 +73,6 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .search-box,
 .secondary-button,
 .primary-button,
-.shoe-card-actions,
 .preview-status,
 .toggle-row,
 .calibration-actions,
@@ -162,25 +161,6 @@ button { border: 0; }
 .result-count { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .add-button { margin-left: auto; white-space: nowrap; }
 
-/* Padding keeps the active card's outline from being clipped by the scroll box. */
-.shoe-list { flex: 1; min-height: 0; overflow-y: auto; margin: -3px -6px 0 -3px; padding: 3px 6px 16px 3px; display: flex; flex-direction: column; gap: 10px; }
-.shoe-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 47px;
-  background: #fff;
-  border: 1px solid #dedfe3;
-  border-radius: 9px;
-  box-shadow: 0 3px 12px rgba(22, 24, 28, 0.04);
-  overflow: hidden;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
-}
-.shoe-card:hover { border-color: #c6c8cd; }
-.shoe-card.is-active { border-color: var(--red); box-shadow: 0 0 0 2px rgba(213, 9, 32, 0.08), var(--shadow); }
-.shoe-card-index { display: flex; flex-direction: column; align-items: center; padding-top: 16px; gap: 15px; color: #979aa1; background: #f6f6f7; border-right: 1px solid #e2e3e6; }
-.shoe-card-index input { width: 16px; height: 16px; accent-color: var(--red); }
-.shoe-card-index span { font-family: "Roboto Condensed", sans-serif; font-size: 13px; font-weight: 800; writing-mode: vertical-rl; letter-spacing: 2px; }
-.shoe-card-main { min-width: 0; padding: 14px 14px 12px; }
 .editor-grid { display: grid; gap: 10px; }
 .editor-grid-primary { grid-template-columns: 150px minmax(210px, 1.8fr) minmax(115px, .7fr) minmax(115px, .7fr) 82px; }
 .field { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -222,16 +202,10 @@ button { border: 0; }
 .spec-field { position: relative; }
 .spec-field input { padding-right: 34px; }
 .field .spec-unit { position: absolute; right: 10px; bottom: 10px; color: #9a9da4; font-size: 11px; font-style: normal; font-weight: 700; pointer-events: none; }
-.cart-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e2e3e6; }
-.cart-row-label { display: inline-flex; align-items: center; gap: 5px; color: #5f6269; font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; }
-.cart-row.in-cart .cart-row-label { color: var(--red); }
-.cart-row .quantity-stepper { width: 112px; }
-.cart-row-button { height: 36px; }
 .feature-field { position: relative; }
 .feature-field > span { position: absolute; z-index: 1; left: 8px; top: 26px; color: #fff; width: 18px; height: 18px; display: grid; place-content: center; border-radius: 3px; background: var(--red); font-size: 9px; }
 .feature-field input { padding-left: 33px; }
 .row-error { margin: 6px 0 0 130px; }
-.shoe-card-actions { flex-direction: column; gap: 5px; padding: 11px 7px; border-left: 1px solid #e4e5e8; }
 .icon-button { width: 31px; height: 31px; display: inline-grid; place-items: center; color: #5e6167; background: transparent; border-radius: 5px; }
 .icon-button:hover:not(:disabled) { color: #111216; background: #ededee; }
 .icon-button.danger:hover { color: #bc0017; background: #fff0f2; }
@@ -488,3 +462,58 @@ fieldset { min-width: 0; }
 .update-notes h3 { margin: 0; padding: 8px 12px; color: #4d5056; background: var(--soft); border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase; }
 .update-notes pre { margin: 0; padding: 10px 12px; max-height: 220px; overflow: auto; font: inherit; font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 .spin { animation: spin 900ms linear infinite; }
+
+/* Compact catalog: print controls stay available even when the editor is closed. */
+.shoe-list { margin: 0; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.shoe-list > div { flex-shrink: 0; }
+.shoe-list-header,
+.shoe-summary { display: grid; grid-template-columns: 18px 64px minmax(100px, 1fr) 82px 224px 28px; align-items: center; gap: 8px; padding: 0 12px; }
+.shoe-list-header { position: sticky; top: 0; z-index: 2; min-height: 34px; color: var(--muted); background: #f7f7f8; border-bottom: 1px solid var(--line); font-size: 10px; font-weight: 700; }
+.shoe-list-header > :nth-child(4) { text-align: right; }
+.shoe-list-header > :nth-child(5) { text-align: center; }
+.shoe-list-item { border-bottom: 1px solid var(--line); }
+.shoe-list > div:last-child .shoe-list-item { border-bottom: 0; }
+.shoe-summary { min-height: 60px; }
+.shoe-summary > input { width: 15px; height: 15px; margin: 0; accent-color: var(--red); }
+.shoe-brand-logo { display: block; width: 60px; height: 24px; object-fit: contain; }
+.shoe-model-toggle { align-self: stretch; min-width: 0; padding: 7px 0; color: #202126; background: transparent; text-align: left; overflow-wrap: anywhere; font-size: 12px; font-weight: 700; }
+.shoe-summary-price { display: flex; flex-direction: column; gap: 2px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shoe-summary-price strong { font-size: 12px; }
+.shoe-summary-price del { color: var(--muted); font-size: 10px; }
+.shoe-summary-price.sale strong { color: var(--red); }
+.shoe-list-item.is-active .shoe-summary { background: #fff9fa; }
+.shoe-list-item.is-expanded { box-shadow: inset 3px 0 var(--red); }
+.shoe-row-cart { display: grid; grid-template-columns: 42px minmax(0, 1fr) 23px; gap: 5px; align-items: center; }
+.shoe-row-cart > input { min-width: 0; width: 100%; height: 30px; padding: 0 3px; color: #202126; background: #fff; border: 1px solid #d8dadd; border-radius: 5px; text-align: center; font-size: 12px; }
+.shoe-row-cart-main { padding: 5px 0; display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+.shoe-row-cart-main .secondary-button { min-height: 29px; padding: 0 6px; gap: 4px; font-size: 10px; white-space: nowrap; }
+.shoe-row-cart-status { min-height: 13px; color: var(--green); font-size: 9px; text-align: center; }
+.shoe-row-cart > .icon-button { width: 23px; height: 28px; }
+.shoe-row-cart > .icon-button:disabled { visibility: hidden; }
+.shoe-details { padding: 0 22px 16px 38px; background: #fafafb; border-top: 1px solid var(--line); }
+.shoe-editor-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.shoe-editor-tabs button { padding: 12px 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font-size: 12px; font-weight: 700; }
+.shoe-editor-tabs button[aria-selected="true"] { color: var(--red); border-bottom-color: var(--red); }
+.shoe-details .editor-grid-primary { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.shoe-details .brand-field { grid-column: span 2; }
+.shoe-details .model-field { grid-column: span 4; }
+.shoe-details .price-field,
+.shoe-details .percent-field { grid-column: span 2; }
+.shoe-details .summary-row { grid-template-columns: 1fr; }
+.shoe-details .feature-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.shoe-details .spec-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.shoe-details .feature-row > .feature-row-label,
+.shoe-details .spec-row > .feature-row-label { grid-column: 1 / -1; }
+.shoe-details .row-error { margin-left: 0; }
+.shoe-editor-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding-top: 12px; margin-top: 16px; border-top: 1px solid var(--line); }
+.shoe-editor-actions .secondary-button { min-height: 30px; padding: 0 10px; font-size: 11px; }
+.shoe-editor-status { flex: 1; min-width: 100px; font-size: 10px; line-height: 1.5; }
+.shoe-editor-status.valid { color: var(--green); }
+.shoe-editor-status.invalid { color: var(--red); }
+.shoe-list button:focus-visible,
+.shoe-list input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+@media (max-width: 1290px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 310px; }
+  .shoe-list-header,
+  .shoe-summary { grid-template-columns: 18px 60px minmax(100px, 1fr) 78px 216px 26px; gap: 6px; padding-left: 10px; padding-right: 10px; }
+}

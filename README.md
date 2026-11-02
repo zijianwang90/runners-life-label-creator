@@ -4,11 +4,11 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 
 ## Included workflow
 
-- Add, duplicate, reorder, search, filter, and delete shoe models; every edit is immediately persisted locally.
+- Browse one compact shoe list showing brand logos, model names and prices. Expand one shoe at a time to edit its brand and prices or its selling points, summary and specs. Add, duplicate, reorder, search, filter, and delete shoe models; every edit is immediately persisted locally.
 - Edit brand, model, regular price, optional sale price, and zero to three optional selling points.
 - **Who it's for** (optional): one line, up to 60 characters, printed in red right under the model name so a shopper sees in a second which runner the shoe suits, e.g. `FOR RUNNERS CHASING A FASTER TEMPO`. Labels without it look exactly as before.
 - **Specs row** (optional): heel and forefoot stack height, weight and plate (carbon / nylon / TPU / Pebax). Filled-in specs print as a smaller second row under the selling points, e.g. `STACK 39/31 MM • 245 G • CARBON PLATE`; labels without specs look exactly as before.
-- **Print list (cart)**: on any label in the list, pick how many copies to print and click `Add to print list` (or tick several labels and add one copy of each). Adding a label that is already on the list adds to its copies. `Print list` shows every waiting label, where copies can still be changed or a label removed, before the PDF is made. The list is saved with your labels and is emptied once its PDF has been created.
+- **Print list (cart)**: on any row, pick how many copies to print and click `Add to print list` without expanding the editor or ticking a checkbox. Checkboxes are used for AI selling points. Adding a label that is already on the list adds to its copies. `Print list` shows every waiting label, where copies can still be changed or a label removed, before the PDF is made. The list is saved with your labels and is emptied once its PDF has been created.
 - Live SVG preview with the approved red/white regular and oversized SALE-seal variants.
 - Everything is saved automatically on this computer; there is nothing to import or export.
 - **Adjustable label size**: change the label's width and height in the preview panel (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6:1–10.5:1 (so 180 × 30 mm is the squarest), the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.

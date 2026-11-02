@@ -39,6 +39,7 @@ export default function App() {
   const [data, setData] = useState<AppData | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("loading");
   const [activeId, setActiveId] = useState<string>("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState<BrandId | "all">("all");
@@ -118,7 +119,10 @@ export default function App() {
     const shoe = createEmptyShoe();
     setData((current) => current ? { ...current, shoes: [...current.shoes, shoe] } : current);
     setActiveId(shoe.id);
-    window.setTimeout(() => document.querySelector<HTMLElement>(`[data-shoe-id="${shoe.id}"] input`)?.focus(), 50);
+    setExpandedId(shoe.id);
+    setSearch("");
+    setBrandFilter("all");
+    window.setTimeout(() => document.querySelector<HTMLElement>(`[data-shoe-id="${shoe.id}"] [data-model-input]`)?.focus(), 50);
   }, []);
 
   useEffect(() => {
@@ -139,7 +143,7 @@ export default function App() {
     const now = new Date().toISOString();
     const copy: ShoeLabel = { ...structuredClone(source), id: crypto.randomUUID(), model: `${source.model} COPY`.trim(), createdAt: now, updatedAt: now };
     const index = shoes.findIndex((shoe) => shoe.id === source.id);
-    const next = [...shoes]; next.splice(index + 1, 0, copy); updateShoes(next); setActiveId(copy.id);
+    const next = [...shoes]; next.splice(index + 1, 0, copy); updateShoes(next); setActiveId(copy.id); setExpandedId(copy.id);
   };
   const deleteShoe = (id: string) => {
     const shoe = shoes.find((item) => item.id === id);
@@ -184,6 +188,9 @@ export default function App() {
     const invalid = candidates.find((shoe) => !validateShoe(shoe).valid);
     if (!invalid) return false;
     setActiveId(invalid.id);
+    setExpandedId(invalid.id);
+    setSearch("");
+    setBrandFilter("all");
     showToast(`Complete ${invalid.model || "the highlighted label"} before ${action}.`, "error");
     return true;
   };
@@ -192,16 +199,6 @@ export default function App() {
     if (blockIncomplete([shoe], "adding it to the print list")) return;
     updateCart((cart) => addToCart(cart, shoe.id, copies));
     showToast(`${copies} × ${shoe.model} added to the print list.`, "success");
-  };
-
-  const addSelectedToCart = () => {
-    const candidates = shoes.filter((shoe) => selectedIds.has(shoe.id));
-    if (candidates.length === 0 || blockIncomplete(candidates, "adding it to the print list")) return;
-    const fresh = candidates.filter((shoe) => !cartCopiesById.has(shoe.id));
-    updateCart((cart) => fresh.reduce((next, shoe) => addToCart(next, shoe.id, 1), cart));
-    setSelectedIds(new Set());
-    const already = candidates.length - fresh.length;
-    showToast(`${fresh.length} label${fresh.length === 1 ? "" : "s"} added to the print list${already ? ` (${already} already on it)` : ""}.`, "success");
   };
 
   function openPrintDialog() {
@@ -286,11 +283,11 @@ export default function App() {
             cartLabels={printQueue.length}
             cartCopies={cartCopyCount(printCart)}
             onAi={() => setAiOpen(true)}
-            onAddSelected={addSelectedToCart}
             onOpenCart={() => void openPrintDialog()}
           />
 
           <div className="shoe-list">
+            <div className="shoe-list-header" aria-hidden="true"><span /><span>Brand</span><span>Model</span><span>Price</span><span>Copies to print</span><span /></div>
             {filteredShoes.length === 0 ? (
               <div className="empty-state"><Search size={30} /><h3>No matching shoes</h3><p>Clear the filters or add a new shoe label.</p></div>
             ) : filteredShoes.map((shoe) => {
@@ -301,6 +298,9 @@ export default function App() {
                     shoe={shoe}
                     index={globalIndex}
                     active={activeId === shoe.id}
+                    expanded={expandedId === shoe.id}
+                    currencySymbol={data.settings.currencySymbol}
+                    onToggle={() => setExpandedId((current) => current === shoe.id ? null : shoe.id)}
                     selected={selectedIds.has(shoe.id)}
                     canMoveUp={globalIndex > 0}
                     canMoveDown={globalIndex < shoes.length - 1}
@@ -312,7 +312,6 @@ export default function App() {
                     onMove={(direction) => moveShoe(shoe.id, direction)}
                     cartCopies={cartCopiesById.get(shoe.id) ?? null}
                     onAddToCart={(copies) => addShoeToCart(shoe, copies)}
-                    onCartCopiesChange={(copies) => updateCart((cart) => setCartCopies(cart, shoe.id, copies))}
                     onRemoveFromCart={() => updateCart((cart) => removeFromCart(cart, shoe.id))}
                   />
                 </div>

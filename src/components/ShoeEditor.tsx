@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Copy, ShoppingCart, Trash2, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, ShoppingCart, Trash2, X } from "lucide-react";
 import { brandLogos, brandNames } from "../assets";
 import { BRAND_IDS, PLATE_TYPES, type PlateType, type ShoeLabel, type ShoeSpecs } from "../types";
-import { QuantityStepper } from "./QuantityStepper";
-import { EMPTY_SPECS, getPriceState, MAX_SUMMARY_LENGTH, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
+import { clampCopies, MAX_COPIES } from "../utils/cart";
+import { EMPTY_SPECS, formatMoney, getPriceState, MAX_SUMMARY_LENGTH, PLATE_NAMES, salePercentOf, salePriceFromPercent, validateShoe } from "../utils/labels";
 
 interface ShoeEditorProps {
   shoe: ShoeLabel;
   index: number;
   selected: boolean;
   active: boolean;
+  expanded: boolean;
+  currencySymbol: string;
+  onToggle: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onSelect: (selected: boolean) => void;
@@ -21,7 +24,6 @@ interface ShoeEditorProps {
   /** Copies of this label on the print list; null when it is not on it. */
   cartCopies: number | null;
   onAddToCart: (copies: number) => void;
-  onCartCopiesChange: (copies: number) => void;
   onRemoveFromCart: () => void;
 }
 
@@ -87,31 +89,35 @@ interface CartRowProps {
   name: string;
   copies: number | null;
   onAdd: (copies: number) => void;
-  onCopiesChange: (copies: number) => void;
   onRemove: () => void;
 }
 
-/** Pick how many copies to print and put them on the print list; once there, the stepper edits the list. */
-function CartRow({ name, copies, onAdd, onCopiesChange, onRemove }: CartRowProps) {
+/** Each row adds a chosen number of copies; existing copies stay visible without opening the editor. */
+function CartRow({ name, copies, onAdd, onRemove }: CartRowProps) {
   const [draft, setDraft] = useState(1);
-  const inCart = copies !== null;
   return (
-    <div className={`cart-row ${inCart ? "in-cart" : ""}`} onClick={(event) => event.stopPropagation()}>
-      <span className="cart-row-label">{inCart ? <><ShoppingCart size={14} /> On the print list</> : "Copies to print"}</span>
-      <QuantityStepper value={copies ?? draft} name={name} onChange={inCart ? onCopiesChange : setDraft} />
-      {inCart ? (
-        <button type="button" className="secondary-button cart-row-button" onClick={onRemove}><X size={15} /> Remove</button>
-      ) : (
-        <button type="button" className="primary-button cart-row-button" onClick={() => { onAdd(draft); setDraft(1); }}>
-          <ShoppingCart size={15} /> Add to print list
+    <div className="shoe-row-cart" onClick={(event) => event.stopPropagation()}>
+      <input aria-label={`${name} print copies`} type="number" min="1" max={MAX_COPIES} value={draft}
+        onChange={(event) => setDraft(clampCopies(event.target.value))} />
+      <div className="shoe-row-cart-main">
+        <button type="button" className="secondary-button" onClick={() => onAdd(draft)}>
+          <ShoppingCart size={14} /> Add to print list
         </button>
-      )}
+        <span className="shoe-row-cart-status" aria-live="polite">{copies !== null ? `On the print list · ${copies}` : ""}</span>
+      </div>
+      <button type="button" className="icon-button danger" onClick={onRemove} disabled={copies === null}
+        title="Remove" aria-label={`Remove ${name} from print list`}><X size={14} /></button>
     </div>
   );
 }
 
 export function ShoeEditor(props: ShoeEditorProps) {
   const { shoe } = props;
+  const editorId = useId();
+  const modelButton = useRef<HTMLButtonElement>(null);
+  const [tab, setTab] = useState<"basic" | "content">("basic");
+  const name = shoe.model || `shoe ${props.index + 1}`;
+  const toggle = () => { props.onActivate(); props.onToggle(); };
   const validation = validateShoe(shoe);
   const update = (patch: Partial<ShoeLabel>) => props.onChange({ ...shoe, ...patch, updatedAt: new Date().toISOString() });
   const priceState = getPriceState(shoe);
@@ -133,147 +139,156 @@ export function ShoeEditor(props: ShoeEditorProps) {
   );
 
   return (
-    <article className={`shoe-card ${props.active ? "is-active" : ""}`} onClick={props.onActivate}>
-      <div className="shoe-card-index">
-        <input
-          type="checkbox"
-          checked={props.selected}
-          onChange={(event) => props.onSelect(event.target.checked)}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={`Select ${shoe.model || `shoe ${props.index + 1}`}`}
-        />
-        <span>{String(props.index + 1).padStart(2, "0")}</span>
+    <article aria-label={name} className={`shoe-list-item ${props.active ? "is-active" : ""} ${props.expanded ? "is-expanded" : ""}`}>
+      <div className="shoe-summary">
+        <input type="checkbox" checked={props.selected} onChange={(event) => props.onSelect(event.target.checked)} aria-label={`Select ${name}`} />
+        <img className="shoe-brand-logo" src={brandLogos[shoe.brand]} alt={brandNames[shoe.brand]} />
+        <button ref={modelButton} type="button" className="shoe-model-toggle" onClick={toggle} aria-expanded={props.expanded} aria-controls={editorId}>{shoe.model || "SHOE MODEL"}</button>
+        <div className={`shoe-summary-price ${priceState}`}>
+          <strong>{formatMoney(priceState === "sale" ? shoe.salePrice : shoe.regularPrice, props.currencySymbol)}</strong>
+          {priceState === "sale" && <del>{formatMoney(shoe.regularPrice, props.currencySymbol)}</del>}
+        </div>
+        <CartRow name={name} copies={props.cartCopies} onAdd={props.onAddToCart} onRemove={props.onRemoveFromCart} />
+        <button type="button" className="icon-button" onClick={toggle} aria-expanded={props.expanded} aria-controls={editorId}
+          aria-label={`${props.expanded ? "Close" : "Edit"} ${name}`}>{props.expanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</button>
       </div>
-
-      <div className="shoe-card-main">
-        <div className="editor-grid editor-grid-primary">
-          <label className="field brand-field">
-            <span>Brand</span>
-            <div className="brand-select-wrap">
-              <img src={brandLogos[shoe.brand]} alt="" />
-              <select value={shoe.brand} onChange={(event) => update({ brand: event.target.value as ShoeLabel["brand"] })}>
-                {BRAND_IDS.map((brand) => <option key={brand} value={brand}>{brandNames[brand]}</option>)}
-              </select>
-            </div>
-          </label>
-
-          <label className={`field model-field ${validation.fields.model ? "has-error" : ""}`}>
-            <span>Model</span>
-            <input
-              value={shoe.model}
-              maxLength={50}
-              placeholder="e.g. Endorphin Speed 5"
-              onChange={(event) => update({ model: event.target.value })}
-            />
-            {validation.fields.model && <small>{validation.fields.model}</small>}
-          </label>
-
-          <label className={`field price-field ${validation.fields.regularPrice ? "has-error" : ""}`}>
-            <span>Regular price</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={shoe.regularPrice ?? ""}
-              placeholder="229.99"
-              onChange={(event) => update({ regularPrice: numericValue(event.target.value) })}
-            />
-            {validation.fields.regularPrice && <small>{validation.fields.regularPrice}</small>}
-          </label>
-
-          <label className={`field price-field ${validation.fields.salePrice ? "has-error" : ""}`}>
-            <span>Sale price <em>optional</em></span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={shoe.salePrice ?? ""}
-              placeholder="189.99"
-              onChange={(event) => update({ salePrice: numericValue(event.target.value) })}
-            />
-            {validation.fields.salePrice && <small>{validation.fields.salePrice}</small>}
-          </label>
-
-          <SalePercentField regularPrice={shoe.regularPrice} salePrice={shoe.salePrice} onSalePriceChange={(salePrice) => update({ salePrice })} />
-
+      {props.expanded && <div className="shoe-details" id={editorId}>
+        <div className="shoe-editor-tabs" role="tablist" aria-label={`Edit ${name}`} onKeyDown={(event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === "Home" ? "basic" : event.key === "End" ? "content" : tab === "basic" ? "content" : "basic";
+          setTab(next);
+          event.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]")[next === "basic" ? 0 : 1]?.focus();
+        }}>
+          <button type="button" role="tab" tabIndex={tab === "basic" ? 0 : -1} id={`${editorId}-basic-tab`} aria-controls={`${editorId}-basic`} aria-selected={tab === "basic"} onClick={() => setTab("basic")}>Brand &amp; price</button>
+          <button type="button" role="tab" tabIndex={tab === "content" ? 0 : -1} id={`${editorId}-content-tab`} aria-controls={`${editorId}-content`} aria-selected={tab === "content"} onClick={() => setTab("content")}>Selling points &amp; specs</button>
         </div>
-
-        <div className="summary-row">
-          <div className="feature-row-label">
-            <span>Who it's for</span>
-            <small>Optional · one line under the model</small>
-          </div>
-          <label className={`field summary-field ${validation.fields.summary ? "has-error" : ""}`}>
-            <span>Summary</span>
-            <input
-              value={shoe.summary ?? ""}
-              maxLength={80}
-              placeholder="e.g. For runners chasing a faster tempo and race pace"
-              onChange={(event) => update({ summary: event.target.value })}
-            />
-            <em className="summary-count">{(shoe.summary ?? "").trim().length}/{MAX_SUMMARY_LENGTH}</em>
-          </label>
-        </div>
-        {validation.fields.summary && <div className="row-error">{validation.fields.summary}</div>}
-
-        <div className="feature-row">
-          <div className="feature-row-label">
-            <span>Selling points</span>
-            <small>Optional · up to 3 phrases</small>
-          </div>
-          {shoe.features.map((feature, featureIndex) => (
-            <label key={featureIndex} className={`field feature-field ${validation.fields.features ? "has-error" : ""}`}>
-              <span>{featureIndex + 1}</span>
-              <input
-                value={feature}
-                maxLength={45}
-                placeholder={featureIndex === 0 ? "Lightweight & responsive" : featureIndex === 1 ? "Speedroll technology" : "Built for tempo runs"}
-                onChange={(event) => {
-                  const features = [...shoe.features] as ShoeLabel["features"];
-                  features[featureIndex] = event.target.value;
-                  update({ features });
-                }}
-              />
+        <div role="tabpanel" id={`${editorId}-basic`} aria-labelledby={`${editorId}-basic-tab`} hidden={tab !== "basic"}>
+          <div className="editor-grid editor-grid-primary">
+            <label className="field brand-field">
+              <span>Brand</span>
+              <div className="brand-select-wrap">
+                <img src={brandLogos[shoe.brand]} alt="" />
+                <select value={shoe.brand} onChange={(event) => update({ brand: event.target.value as ShoeLabel["brand"] })}>
+                  {BRAND_IDS.map((brand) => <option key={brand} value={brand}>{brandNames[brand]}</option>)}
+                </select>
+              </div>
             </label>
-          ))}
-        </div>
-        {validation.fields.features && <div className="row-error">{validation.fields.features}</div>}
 
-        <div className="spec-row">
-          <div className="feature-row-label">
-            <span>Specs</span>
-            <small>Optional · printed as a second row</small>
+            <label className={`field model-field ${validation.fields.model ? "has-error" : ""}`}>
+              <span>Model</span>
+              <input
+                data-model-input
+                autoFocus={!shoe.model}
+                value={shoe.model}
+                maxLength={50}
+                placeholder="e.g. Endorphin Speed 5"
+                onChange={(event) => update({ model: event.target.value })}
+              />
+              {validation.fields.model && <small>{validation.fields.model}</small>}
+            </label>
+
+            <label className={`field price-field ${validation.fields.regularPrice ? "has-error" : ""}`}>
+              <span>Regular price</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={shoe.regularPrice ?? ""}
+                placeholder="229.99"
+                onChange={(event) => update({ regularPrice: numericValue(event.target.value) })}
+              />
+              {validation.fields.regularPrice && <small>{validation.fields.regularPrice}</small>}
+            </label>
+
+            <label className={`field price-field ${validation.fields.salePrice ? "has-error" : ""}`}>
+              <span>Sale price <em>optional</em></span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={shoe.salePrice ?? ""}
+                placeholder="189.99"
+                onChange={(event) => update({ salePrice: numericValue(event.target.value) })}
+              />
+              {validation.fields.salePrice && <small>{validation.fields.salePrice}</small>}
+            </label>
+
+            <SalePercentField regularPrice={shoe.regularPrice} salePrice={shoe.salePrice} onSalePriceChange={(salePrice) => update({ salePrice })} />
+
           </div>
-          {specNumberField("heelStackMm", "Heel stack", "mm", "39")}
-          {specNumberField("forefootStackMm", "Forefoot stack", "mm", "31")}
-          {specNumberField("weightG", "Weight", "g", "245")}
-          <label className="field spec-field">
-            <span>Plate</span>
-            <select value={specs.plate} onChange={(event) => updateSpecs({ plate: event.target.value as PlateType })}>
-              <option value="">None / not shown</option>
-              {PLATE_TYPES.map((plate) => <option key={plate} value={plate}>{PLATE_NAMES[plate]}</option>)}
-            </select>
-          </label>
         </div>
-        {validation.fields.specs && <div className="row-error">{validation.fields.specs}</div>}
+        <div role="tabpanel" id={`${editorId}-content`} aria-labelledby={`${editorId}-content-tab`} hidden={tab !== "content"}>
+          <div className="summary-row">
+            <div className="feature-row-label">
+              <span>Who it's for</span>
+              <small>Optional · one line under the model</small>
+            </div>
+            <label className={`field summary-field ${validation.fields.summary ? "has-error" : ""}`}>
+              <span>Summary</span>
+              <input
+                value={shoe.summary ?? ""}
+                maxLength={80}
+                placeholder="e.g. For runners chasing a faster tempo and race pace"
+                onChange={(event) => update({ summary: event.target.value })}
+              />
+              <em className="summary-count">{(shoe.summary ?? "").trim().length}/{MAX_SUMMARY_LENGTH}</em>
+            </label>
+          </div>
+          {validation.fields.summary && <div className="row-error">{validation.fields.summary}</div>}
 
-        <CartRow
-          name={shoe.model || `shoe ${props.index + 1}`}
-          copies={props.cartCopies}
-          onAdd={props.onAddToCart}
-          onCopiesChange={props.onCartCopiesChange}
-          onRemove={props.onRemoveFromCart}
-        />
-      </div>
+          <div className="feature-row">
+            <div className="feature-row-label">
+              <span>Selling points</span>
+              <small>Optional · up to 3 phrases</small>
+            </div>
+            {shoe.features.map((feature, featureIndex) => (
+              <label key={featureIndex} className={`field feature-field ${validation.fields.features ? "has-error" : ""}`}>
+                <span>{featureIndex + 1}</span>
+                <input
+                  value={feature}
+                  maxLength={45}
+                  placeholder={featureIndex === 0 ? "Lightweight & responsive" : featureIndex === 1 ? "Speedroll technology" : "Built for tempo runs"}
+                  onChange={(event) => {
+                    const features = [...shoe.features] as ShoeLabel["features"];
+                    features[featureIndex] = event.target.value;
+                    update({ features });
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+          {validation.fields.features && <div className="row-error">{validation.fields.features}</div>}
 
-      <div className="shoe-card-actions">
-        <span className={`state-pill ${priceState}`}>{priceState === "sale" ? "SALE" : "REGULAR"}</span>
-        <button className="icon-button" title="Move up" disabled={!props.canMoveUp} onClick={(event) => { event.stopPropagation(); props.onMove(-1); }}><ArrowUp size={16} /></button>
-        <button className="icon-button" title="Move down" disabled={!props.canMoveDown} onClick={(event) => { event.stopPropagation(); props.onMove(1); }}><ArrowDown size={16} /></button>
-        <button className="icon-button" title="Duplicate" onClick={(event) => { event.stopPropagation(); props.onDuplicate(); }}><Copy size={16} /></button>
-        <button className="icon-button danger" title="Delete" onClick={(event) => { event.stopPropagation(); props.onDelete(); }}><Trash2 size={16} /></button>
-        <span className={`validation-dot ${validation.valid ? "valid" : "invalid"}`} title={validation.valid ? "Ready to print" : validation.errors.join(" ")} />
-      </div>
+          <div className="spec-row">
+            <div className="feature-row-label">
+              <span>Specs</span>
+              <small>Optional · printed as a second row</small>
+            </div>
+            {specNumberField("heelStackMm", "Heel stack", "mm", "39")}
+            {specNumberField("forefootStackMm", "Forefoot stack", "mm", "31")}
+            {specNumberField("weightG", "Weight", "g", "245")}
+            <label className="field spec-field">
+              <span>Plate</span>
+              <select value={specs.plate} onChange={(event) => updateSpecs({ plate: event.target.value as PlateType })}>
+                <option value="">None / not shown</option>
+                {PLATE_TYPES.map((plate) => <option key={plate} value={plate}>{PLATE_NAMES[plate]}</option>)}
+              </select>
+            </label>
+          </div>
+          {validation.fields.specs && <div className="row-error">{validation.fields.specs}</div>}
+        </div>
+
+        <div className="shoe-editor-actions">
+          <span className={`state-pill ${priceState}`}>{priceState === "sale" ? "SALE" : "REGULAR"}</span>
+          <button className="icon-button" title="Move up" disabled={!props.canMoveUp} onClick={(event) => { event.stopPropagation(); props.onMove(-1); }}><ArrowUp size={16} /></button>
+          <button className="icon-button" title="Move down" disabled={!props.canMoveDown} onClick={(event) => { event.stopPropagation(); props.onMove(1); }}><ArrowDown size={16} /></button>
+          <button className="icon-button" title="Duplicate" onClick={(event) => { event.stopPropagation(); props.onDuplicate(); }}><Copy size={16} /></button>
+          <button className="icon-button danger" title="Delete" onClick={(event) => { event.stopPropagation(); props.onDelete(); }}><Trash2 size={16} /></button>
+          <span className={`shoe-editor-status ${validation.valid ? "valid" : "invalid"}`} role="status">{validation.valid ? "Ready to print" : validation.errors.join(" ")}</span>
+          <button type="button" className="secondary-button" onClick={() => { props.onToggle(); modelButton.current?.focus(); }}><Check size={14} /> Done</button>
+        </div>
+      </div>}
     </article>
   );
 }
