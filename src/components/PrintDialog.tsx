@@ -54,7 +54,7 @@ export function PrintDialog(props: PrintDialogProps) {
             <div className="print-cart-list">
               {props.shoes.map((shoe) => (
                 <article className="print-cart-item" key={shoe.id}>
-                  <div className="cart-label-preview"><LabelSvg shoe={shoe} currencySymbol={props.settings.currencySymbol} size={size} {...labelScaleProps(props.settings)} /></div>
+                  <div className="cart-label-preview"><LabelSvg shoe={shoe} size={size} {...labelScaleProps(props.settings)} /></div>
                   <div className="cart-item-controls">
                     <span>Copies</span>
                     <QuantityStepper value={shoe.quantity} name={shoe.model} onChange={(copies) => props.onCopiesChange(shoe.id, copies)} />

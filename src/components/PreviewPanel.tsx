@@ -9,7 +9,6 @@ import { TextSizeControls } from "./TextSizeControls";
 
 interface PreviewPanelProps {
   shoe: ShoeLabel | null;
-  currencySymbol: string;
   labelSize: LabelSize;
   onLabelSizeChange: (size: LabelSize) => void;
   textScales: TextScales;
@@ -17,7 +16,7 @@ interface PreviewPanelProps {
 }
 
 /** Full-width live preview above the list. Label size and text size apply to every label, so they sit in a popover. */
-export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChange, textScales, onTextScalesChange }: PreviewPanelProps) {
+export function PreviewPanel({ shoe, labelSize, onLabelSizeChange, textScales, onTextScalesChange }: PreviewPanelProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const panel = useRef<HTMLElement>(null);
 
@@ -54,7 +53,7 @@ export function PreviewPanel({ shoe, currencySymbol, labelSize, onLabelSizeChang
       </div>
 
       {shoe
-        ? <div className="label-stage"><LabelSvg shoe={shoe} currencySymbol={currencySymbol} size={labelSize} {...labelScaleProps(textScales)} /></div>
+        ? <div className="label-stage"><LabelSvg shoe={shoe} size={labelSize} {...labelScaleProps(textScales)} /></div>
         : <div className="label-stage empty-preview"><p>Select a shoe to preview its printed label.</p></div>}
 
       {settingsOpen && (

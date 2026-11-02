@@ -24,7 +24,7 @@ function Harness({ initial }: { initial: Partial<ShoeLabel> }) {
   const [shoe, setShoe] = useState<ShoeLabel>({ ...base, ...initial });
   return (
     <ShoeEditor
-      shoe={shoe} index={0} selected={false} active expanded currencySymbol="$" onToggle={() => undefined} canMoveUp={false} canMoveDown={false}
+      shoe={shoe} index={0} selected={false} active expanded onToggle={() => undefined} canMoveUp={false} canMoveDown={false}
       onSelect={() => undefined} onActivate={() => undefined} onChange={setShoe}
       onDuplicate={() => undefined} onDelete={() => undefined} onMove={() => undefined}
       cartCopies={null} onAddToCart={() => undefined} onCartCopiesChange={() => undefined} onRemoveFromCart={() => undefined}

@@ -24,7 +24,6 @@ function renderJob(patch: Partial<PrintPayload>) {
     labels: [shoe("a", 13)],
     mode: "a4",
     paperSize: "a4",
-    currencySymbol: "$",
     labelSize: { ...defaultSettings.labelSize },
     modelTextScale: defaultSettings.modelTextScale,
     featureTextScale: defaultSettings.featureTextScale,

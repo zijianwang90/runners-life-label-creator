@@ -19,7 +19,8 @@ const LEGACY_FILES = new Set([
   "src/utils/labelLayout.test.ts",
 ]);
 
-const HAN = /[㐀-䶿一-鿿豈-﫿]/;
+// Written with escapes so this checker does not trip over itself.
+const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/;
 const BINARY_EXTENSIONS = new Set([
   ".png", ".jpg", ".jpeg", ".gif", ".ico", ".icns", ".pdf", ".zip", ".dmg",
   ".exe", ".woff", ".woff2", ".ttf", ".otf", ".mp4", ".webm", ".wasm",

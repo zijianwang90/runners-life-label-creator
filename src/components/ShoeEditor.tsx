@@ -11,7 +11,6 @@ interface ShoeEditorProps {
   selected: boolean;
   active: boolean;
   expanded: boolean;
-  currencySymbol: string;
   onToggle: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -149,8 +148,8 @@ export function ShoeEditor(props: ShoeEditorProps) {
           {!validation.valid && !props.expanded && <small className="shoe-row-issue"><TriangleAlert size={12} /> {validation.errors[0]}</small>}
         </div>
         <div className={`shoe-summary-price ${priceState}`}>
-          <strong>{formatMoney(priceState === "sale" ? shoe.salePrice : shoe.regularPrice, props.currencySymbol)}</strong>
-          {priceState === "sale" && <del>{formatMoney(shoe.regularPrice, props.currencySymbol)}</del>}
+          <strong>{formatMoney(priceState === "sale" ? shoe.salePrice : shoe.regularPrice)}</strong>
+          {priceState === "sale" && <del>{formatMoney(shoe.regularPrice)}</del>}
         </div>
         <CartRow name={name} copies={props.cartCopies} complete={validation.valid} onAdd={props.onAddToCart} onCopiesChange={props.onCartCopiesChange} onRemove={props.onRemoveFromCart} onComplete={toggle} />
         <button type="button" className="icon-button" onClick={(event) => { event.stopPropagation(); toggle(); }} aria-expanded={props.expanded} aria-controls={editorId}

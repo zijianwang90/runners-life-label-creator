@@ -26,7 +26,7 @@ describe("gift certificates", () => {
 
   it("loads existing data without a signer setting and preserves the last signer", () => {
     const data = createDefaultData();
-    expect(normalizeAppData({ ...data, settings: { currencySymbol: "$" } }).settings.giftCertificateSigner).toBe("");
+    expect(normalizeAppData({ ...data, settings: {} }).settings.giftCertificateSigner).toBe("");
     data.settings.giftCertificateSigner = "Dave";
     expect(normalizeAppData(data).settings.giftCertificateSigner).toBe("Dave");
   });

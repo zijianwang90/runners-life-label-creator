@@ -18,7 +18,6 @@ describe("label backup normalization", () => {
     const data = normalizeAppData({
       shoes: [{ brand: "unknown", model: 123, quantity: 500, features: ["A", "B"] }],
       settings: {
-        currencySymbol: "CAD$",
         printMode: "custom",
         useSystemDialog: false,
         calibration: { scaleX: 3, scaleY: 0.1, offsetXmm: 20, offsetYmm: -20 }
@@ -27,12 +26,11 @@ describe("label backup normalization", () => {
     expect(data.shoes[0].brand).toBe("saucony");
     expect(data.shoes[0].model).toBe("123");
     expect(data.shoes[0].quantity).toBe(99);
-    expect(data.settings.currencySymbol).toBe("CAD");
     expect(data.settings.calibration).toEqual({ scaleX: 1.05, scaleY: 0.95, offsetXmm: 5, offsetYmm: -5 });
   });
 
   it("gives data saved before label sizes existed the approved 220 × 23 mm", () => {
-    const data = normalizeAppData({ shoes: [{ model: "Old label" }], settings: { currencySymbol: "$", printMode: "a4" } });
+    const data = normalizeAppData({ shoes: [{ model: "Old label" }], settings: { printMode: "a4" } });
     expect(data.settings.labelSize).toEqual({ widthMm: 220, heightMm: 23 });
     expect(createDefaultData().settings.labelSize).toEqual({ widthMm: 220, heightMm: 23 });
   });

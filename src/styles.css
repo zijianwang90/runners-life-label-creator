@@ -123,9 +123,6 @@ button { border: 0; }
 .dashboard-strip strong { font-size: 17px; }
 .dashboard-strip span { color: var(--muted); font-size: 12px; }
 .dashboard-strip svg { color: var(--red); }
-.dashboard-strip .currency-setting { margin-left: auto; border: 0; padding-right: 0; }
-.currency-setting label { color: var(--muted); font-size: 12px; }
-.currency-setting input { width: 47px; margin-left: 7px; padding: 5px 6px; text-align: center; border: 1px solid #d5d7db; border-radius: 5px; }
 
 .workspace {
   flex: 1;
@@ -487,7 +484,7 @@ fieldset { min-width: 0; }
 .spin { animation: spin 900ms linear infinite; }
 
 /* Compact catalog: print controls stay available even when the editor is closed. */
-.shoe-list { margin: 0; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.shoe-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .shoe-list > div { flex-shrink: 0; }
 .shoe-list-header,
 .shoe-summary { display: grid; grid-template-columns: 18px 64px minmax(100px, 1fr) 82px 136px 28px; align-items: center; gap: 8px; padding: 0 12px; }

@@ -5,7 +5,6 @@ import { EMPTY_SPECS, normalizeSpecs } from "./utils/labels";
 import { clampLabelSize, clampTextScale, DEFAULT_LABEL_SIZE, TEXT_SCALE_LIMITS } from "./utils/labelSize";
 
 export const defaultSettings: AppSettings = {
-  currencySymbol: "$",
   giftCertificateSigner: "",
   printMode: "a4",
   paperSize: "letter",
@@ -90,9 +89,6 @@ export function normalizeAppData(input: unknown): AppData {
     shoes: shoes.length > 0 ? shoes : [createEmptyShoe()],
     printCart: normalizeCart(candidate.printCart, new Set(shoes.map((shoe) => shoe.id))),
     settings: {
-      currencySymbol: typeof rawSettings.currencySymbol === "string" && rawSettings.currencySymbol
-        ? rawSettings.currencySymbol.slice(0, 3)
-        : "$",
       giftCertificateSigner: typeof rawSettings.giftCertificateSigner === "string" ? rawSettings.giftCertificateSigner.slice(0, 60) : "",
       printMode: rawSettings.printMode === "custom" ? "custom" : "a4",
       // The shop prints on Letter, so anything saved without a paper choice gets it.

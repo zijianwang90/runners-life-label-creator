@@ -28,7 +28,7 @@ function CustomLabels({ labels, payload, size }: { labels: ShoeLabel[]; payload:
   return <>{labels.map((shoe, index) => (
     <section className="custom-print-page" key={`${shoe.id}-${index}`}>
       <div className="calibrated-label" style={calibratedStyle(payload.calibration)}>
-        <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} {...textScaleProps(payload)} />
+        <LabelSvg shoe={shoe} size={size} {...textScaleProps(payload)} />
       </div>
     </section>
   ))}</>;
@@ -45,7 +45,7 @@ function A4Labels({ labels, payload, size }: { labels: ShoeLabel[]; payload: Pri
           <div className="a4-label-slot" key={`${shoe.id}-${index}`}>
             <CropMarks />
             <div className="calibrated-label" style={calibratedStyle(payload.calibration)}>
-              <LabelSvg shoe={shoe} currencySymbol={payload.currencySymbol} size={size} {...textScaleProps(payload)} />
+              <LabelSvg shoe={shoe} size={size} {...textScaleProps(payload)} />
             </div>
           </div>
         ))}

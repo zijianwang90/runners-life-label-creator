@@ -51,7 +51,6 @@ export interface LabelSize {
 export type TextScales = Pick<AppSettings, "modelTextScale" | "featureTextScale" | "priceTextScale" | "regularPriceTextScale" | "saleSealScale">;
 
 export interface AppSettings {
-  currencySymbol: string;
   giftCertificateSigner: string;
   printMode: PrintMode;
   /** Paper the sheet mode prints on. */
@@ -90,7 +89,6 @@ export interface PrintPayload {
   labels: ShoeLabel[];
   mode: PrintMode;
   paperSize: PaperSize;
-  currencySymbol: string;
   labelSize: LabelSize;
   modelTextScale: number;
   featureTextScale: number;

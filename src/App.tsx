@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Download, Gift, LoaderCircle, Plus, Search, Settings2, Tags, TriangleAlert, X } from "lucide-react";
+import { Check, Download, Gift, LoaderCircle, Plus, Search, Tags, TriangleAlert, X } from "lucide-react";
 import { brandNames } from "./assets";
 import { createDefaultData, createEmptyShoe, normalizeAppData } from "./data";
 import { AiPromptDialog, type SellingPointUpdate } from "./components/AiPromptDialog";
@@ -252,7 +252,6 @@ export default function App() {
         labels: kind === "labels" ? printQueue : [],
         mode: data.settings.printMode,
         paperSize: data.settings.paperSize,
-        currencySymbol: data.settings.currencySymbol,
         labelSize: data.settings.labelSize,
         modelTextScale: data.settings.modelTextScale,
         featureTextScale: data.settings.featureTextScale,
@@ -309,7 +308,6 @@ export default function App() {
         <div><Tags size={19} /><strong>{shoes.length}</strong><span>shoe models</span></div>
         <div><strong>{validCount}</strong><span>ready to print</span></div>
         <div><strong>{saleCount}</strong><span>sale labels</span></div>
-        <div className="currency-setting"><Settings2 size={16} /><label>Currency <input value={data.settings.currencySymbol} maxLength={3} onChange={(event) => updateSettings({ ...data.settings, currencySymbol: event.target.value || "$" })} /></label></div>
       </section>
 
       <main className="workspace">
@@ -328,7 +326,7 @@ export default function App() {
             <button className="primary-button add-button" onClick={addShoe}><Plus size={17} /> Add shoe</button>
           </div>
 
-          <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} textScales={data.settings} onTextScalesChange={updateTextScales} />
+          <PreviewPanel shoe={activeShoe} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} textScales={data.settings} onTextScalesChange={updateTextScales} />
 
           <SelectionBar
             shownCount={filteredShoes.length}
@@ -356,7 +354,6 @@ export default function App() {
                     index={globalIndex}
                     active={activeId === shoe.id}
                     expanded={expandedId === shoe.id}
-                    currencySymbol={data.settings.currencySymbol}
                     onToggle={() => setExpandedId((current) => current === shoe.id ? null : shoe.id)}
                     selected={selectedIds.has(shoe.id)}
                     canMoveUp={globalIndex > 0}
