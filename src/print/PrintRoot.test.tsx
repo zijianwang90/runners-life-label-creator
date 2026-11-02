@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings } from "../data";
-import type { PrintPayload, ShoeLabel } from "../types";
+import type { PrintJobPayload, PrintPayload, ShoeLabel } from "../types";
 import { PrintRoot } from "./PrintRoot";
 
 const shoe = (id: string, quantity = 1): ShoeLabel => ({
@@ -42,6 +42,24 @@ function renderJob(patch: Partial<PrintPayload>) {
 }
 
 afterEach(() => { window.electronAPI = undefined; });
+
+describe("gift certificate print document", () => {
+  it("uses Letter portrait and keeps the blank recipient line without a shoe label or calibration", () => {
+    const payload: PrintJobPayload = { kind: "gift-certificate", certificate: { amount: "125.5", to: "", from: "", signer: "Dave", ref: "20261102-2" } };
+    window.electronAPI = {
+      onPrintPayload: (callback: (jobId: string, payload: PrintJobPayload) => void) => { callback("gift-job", payload); return () => undefined; },
+      notifyPrintReady: vi.fn()
+    } as unknown as typeof window.electronAPI;
+    const { container } = render(<PrintRoot />);
+    expect(container.querySelector("style")!.textContent).toContain("Letter portrait");
+    expect(container.querySelectorAll(".gift-print-page")).toHaveLength(1);
+    expect(container.querySelector(".label-svg")).toBeNull();
+    expect(container.textContent).toContain("To:");
+    expect(container.textContent).toContain("$125.50");
+    expect(container.textContent).toContain("20261102-2");
+    expect(container.querySelector(".gift-certificate-svg path")!.getAttribute("d")).toContain("M200 678H704");
+  });
+});
 
 describe("print document at other label sizes", () => {
   it("keeps the approved sheet at 220 × 23 mm: eight labels per A4 page, centred", () => {

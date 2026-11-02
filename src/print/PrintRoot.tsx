@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { LabelSvg, labelScaleProps } from "../components/LabelSvg";
-import type { CalibrationSettings, LabelSize, PrintPayload, ShoeLabel } from "../types";
+import { GiftCertificateSvg } from "../components/GiftCertificateSvg";
+import type { CalibrationSettings, LabelSize, PrintJobPayload, PrintPayload, ShoeLabel } from "../types";
 import { expandLabelCopies, paginate } from "../utils/labels";
 import { a4Layout, clampLabelSize, clampTextScale, formatLabelSize, formatMm } from "../utils/labelSize";
 
-interface JobState { jobId: string; payload: PrintPayload }
+interface JobState { jobId: string; payload: PrintJobPayload }
 
 const calibratedStyle = (calibration: CalibrationSettings): CSSProperties => ({
   transformOrigin: "top left",
@@ -81,7 +82,7 @@ function CalibrationDocument({ payload, size }: { payload: PrintPayload; size: L
 export function PrintRoot() {
   const [job, setJob] = useState<JobState | null>(null);
   useEffect(() => window.electronAPI?.onPrintPayload((jobId, payload) => setJob({ jobId, payload })), []);
-  const labels = useMemo(() => job ? expandLabelCopies(job.payload.labels) : [], [job]);
+  const labels = useMemo(() => job && job.payload.kind !== "gift-certificate" ? expandLabelCopies(job.payload.labels) : [], [job]);
 
   useEffect(() => {
     if (!job) return;
@@ -98,6 +99,12 @@ export function PrintRoot() {
 
   if (!job) return <div className="print-loading">Preparing print document…</div>;
   const { payload } = job;
+  if (payload.kind === "gift-certificate") return (
+    <div className="print-document gift-print-document">
+      <style>{"@page { size: Letter portrait; margin: 0; }"}</style>
+      <section className="gift-print-page"><GiftCertificateSvg certificate={payload.certificate} /></section>
+    </div>
+  );
   const size = clampLabelSize(payload.labelSize);
   const sizeVars = { "--label-w": `${size.widthMm}mm`, "--label-h": `${size.heightMm}mm` } as CSSProperties;
   return (

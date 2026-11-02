@@ -6,6 +6,7 @@ import { clampLabelSize, clampTextScale, DEFAULT_LABEL_SIZE, TEXT_SCALE_LIMITS }
 
 export const defaultSettings: AppSettings = {
   currencySymbol: "$",
+  giftCertificateSigner: "",
   printMode: "a4",
   labelSize: { ...DEFAULT_LABEL_SIZE },
   modelTextScale: TEXT_SCALE_LIMITS.model.default,
@@ -91,6 +92,7 @@ export function normalizeAppData(input: unknown): AppData {
       currencySymbol: typeof rawSettings.currencySymbol === "string" && rawSettings.currencySymbol
         ? rawSettings.currencySymbol.slice(0, 3)
         : "$",
+      giftCertificateSigner: typeof rawSettings.giftCertificateSigner === "string" ? rawSettings.giftCertificateSigner.slice(0, 60) : "",
       printMode: rawSettings.printMode === "custom" ? "custom" : "a4",
       labelSize: clampLabelSize(rawSettings.labelSize),
       modelTextScale: clampTextScale("model", rawSettings.modelTextScale),

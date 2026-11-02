@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AppData, ElectronAPI, PrintPayload, UpdateState } from "../src/types";
+import type { AppData, ElectronAPI, PrintJobPayload, UpdateState } from "../src/types";
 
 const api: ElectronAPI = {
   loadData: () => ipcRenderer.invoke("data:load"),
   saveData: (data: AppData) => ipcRenderer.invoke("data:save", data),
-  print: (payload: PrintPayload) => ipcRenderer.invoke("print:run", payload),
+  print: (payload: PrintJobPayload) => ipcRenderer.invoke("print:run", payload),
   onPrintPayload: (callback) => {
-    const listener = (_event: Electron.IpcRendererEvent, message: { jobId: string; payload: PrintPayload }) => {
+    const listener = (_event: Electron.IpcRendererEvent, message: { jobId: string; payload: PrintJobPayload }) => {
       callback(message.jobId, message.payload);
     };
     ipcRenderer.on("print:payload", listener);

@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Download, LoaderCircle, Plus, Search, Settings2, Tags, TriangleAlert, X } from "lucide-react";
+import { Check, Download, Gift, LoaderCircle, Plus, Search, Settings2, Tags, TriangleAlert, X } from "lucide-react";
 import { brandNames } from "./assets";
 import { createDefaultData, createEmptyShoe, normalizeAppData } from "./data";
 import { AiPromptDialog, type SellingPointUpdate } from "./components/AiPromptDialog";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { PrintDialog } from "./components/PrintDialog";
+import { GiftCertificateDialog } from "./components/GiftCertificateDialog";
+import { certificateError, createGiftCertificate } from "./utils/giftCertificate";
 import { SelectionBar } from "./components/SelectionBar";
 import { ShoeEditor } from "./components/ShoeEditor";
 import { UpdateDialog } from "./components/UpdateDialog";
-import type { AppData, AppSettings, BrandId, LabelSize, PrintCartItem, ShoeLabel, TextScales, UpdateStatus } from "./types";
+import type { AppData, AppSettings, BrandId, GiftCertificate, LabelSize, PrintCartItem, ShoeLabel, TextScales, UpdateStatus } from "./types";
 import { BRAND_IDS } from "./types";
 import { addToCart, cartCopyCount, cartLabels, removeFromCart, setCartCopies } from "./utils/cart";
 import { validateShoe } from "./utils/labels";
@@ -44,6 +46,8 @@ export default function App() {
   const [brandFilter, setBrandFilter] = useState<BrandId | "all">("all");
   const [printOpen, setPrintOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [certificate, setCertificate] = useState<GiftCertificate | null>(null);
+  const giftPrintPending = useRef(false);
   const [printing, setPrinting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [appVersion, setAppVersion] = useState("1.0.0");
@@ -123,6 +127,7 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (certificate) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "n") {
         event.preventDefault(); addShoe();
       }
@@ -132,7 +137,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [addShoe, data, selectedIds, shoes, showToast]);
+  }, [addShoe, certificate, data, selectedIds, shoes, showToast]);
 
   const updateShoe = (id: string, next: ShoeLabel) => updateShoes(shoes.map((shoe) => shoe.id === id ? next : shoe));
   const duplicateShoe = (source: ShoeLabel) => {
@@ -247,6 +252,25 @@ export default function App() {
     } finally { setPrinting(false); }
   }
 
+  async function printGiftCertificate() {
+    if (!certificate || giftPrintPending.current) return;
+    const error = certificateError(certificate);
+    if (error) { showToast(error, "error"); return; }
+    if (!window.electronAPI) { showToast("Printing is available in the desktop application.", "error"); return; }
+    giftPrintPending.current = true;
+    setPrinting(true);
+    try {
+      const result = await window.electronAPI.print({ kind: "gift-certificate", certificate });
+      if (result.success) {
+        setData((current) => current ? { ...current, settings: { ...current.settings, giftCertificateSigner: certificate.signer } } : current);
+        setCertificate(null);
+        showToast("Gift certificate saved as a PDF — it is selected in the folder that just opened. Print from Chrome on Letter paper with Scale set to Default.", "success");
+      } else showToast(result.reason || "Could not create the PDF.", "error");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not create the PDF.", "error");
+    } finally { giftPrintPending.current = false; setPrinting(false); }
+  }
+
   if (!data) return <div className="app-loading"><div className="loading-mark" /><p>Loading label workspace…</p></div>;
 
   return (
@@ -254,6 +278,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-brand"><img src={appIconUrl} alt="Runners Life" /><div><strong>Label Creator</strong><span>SHOE WALL SYSTEM</span></div></div>
         <div className="header-actions">
+          <button className="secondary-button" onClick={() => setCertificate(createGiftCertificate(data.settings.giftCertificateSigner))}><Gift size={17} /> Gift certificate</button>
           <UpdateButton status={updateStatus} onClick={openUpdates} />
           <span className={`save-state ${saveState}`}><Check size={14} />{saveState === "saving" ? "Saving…" : saveState === "error" ? "Save error" : "Saved locally"}</span>
         </div>
@@ -336,6 +361,7 @@ export default function App() {
         onPrint={() => void runPrint("labels")}
         onCalibrationPrint={() => void runPrint("calibration")}
       />
+      {certificate && <GiftCertificateDialog certificate={certificate} printing={printing} onChange={setCertificate} onClose={() => { if (!giftPrintPending.current) setCertificate(null); }} onPrint={() => void printGiftCertificate()} />}
       <AiPromptDialog open={aiOpen} allShoes={shoes} selected={selectedShoes} onClose={() => setAiOpen(false)} onApply={applySellingPoints} />
       {updater.state && (
         <UpdateDialog

@@ -50,6 +50,7 @@ export type TextScales = Pick<AppSettings, "modelTextScale" | "featureTextScale"
 
 export interface AppSettings {
   currencySymbol: string;
+  giftCertificateSigner: string;
   printMode: PrintMode;
   labelSize: LabelSize;
   /** Size of the model name relative to the approved design (1 = approved). */
@@ -93,6 +94,21 @@ export interface PrintPayload {
   saleSealScale: number;
   calibration: CalibrationSettings;
 }
+
+export interface GiftCertificate {
+  amount: string;
+  to: string;
+  from: string;
+  signer: string;
+  ref: string;
+}
+
+export interface GiftCertificatePrintPayload {
+  kind: "gift-certificate";
+  certificate: GiftCertificate;
+}
+
+export type PrintJobPayload = PrintPayload | GiftCertificatePrintPayload;
 
 export interface PrintResult {
   success: boolean;
@@ -138,9 +154,9 @@ export interface UpdateState {
 export interface ElectronAPI {
   loadData: () => Promise<AppData | null>;
   saveData: (data: AppData) => Promise<void>;
-  /** Renders the labels to a PDF and shows it in File Explorer / Finder; it is printed from a browser or PDF viewer. */
-  print: (payload: PrintPayload) => Promise<PrintResult>;
-  onPrintPayload: (callback: (jobId: string, payload: PrintPayload) => void) => () => void;
+  /** Renders labels or a gift certificate to a PDF and shows it in File Explorer / Finder for printing. */
+  print: (payload: PrintJobPayload) => Promise<PrintResult>;
+  onPrintPayload: (callback: (jobId: string, payload: PrintJobPayload) => void) => () => void;
   notifyPrintReady: (jobId: string) => void;
   getAppVersion: () => Promise<string>;
   getUpdateState: () => Promise<UpdateState>;

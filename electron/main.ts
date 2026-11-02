@@ -1,8 +1,10 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from "electron";
 import { promises as fs } from "node:fs";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
-import type { AppData, LabelSize, PrintPayload, PrintResult } from "../src/types";
+import type { AppData, LabelSize, PrintJobPayload, PrintPayload, PrintResult } from "../src/types";
 import { clampLabelSize } from "../src/utils/labelSize";
+import { certificateError } from "../src/utils/giftCertificate";
 import { Updater } from "./updater";
 
 const UPDATE_CHECK_DELAY_MS = 8_000;
@@ -108,7 +110,16 @@ function createMainWindow(): void {
 // The payload comes from the renderer; never trust it for the physical page size.
 const payloadLabelSize = (payload: PrintPayload): LabelSize => clampLabelSize(payload.labelSize);
 
-function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
+function pdfOptions(payload: PrintJobPayload): Electron.PrintToPDFOptions {
+  if (payload.kind === "gift-certificate") return {
+    landscape: false,
+    displayHeaderFooter: false,
+    printBackground: true,
+    scale: 1,
+    margins: { marginType: "none" },
+    pageSize: "Letter",
+    preferCSSPageSize: true
+  };
   const size = payloadLabelSize(payload);
   return {
     landscape: payload.mode === "a4",
@@ -127,9 +138,10 @@ function pdfOptions(payload: PrintPayload): Electron.PrintToPDFOptions {
 const pdfFolder = () => path.join(app.getPath("temp"), "runners-life-label-creator");
 const PDF_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-function pdfFileName(payload: PrintPayload): string {
+function pdfFileName(payload: PrintJobPayload): string {
   // The timestamp keeps every file unique, so one a PDF viewer still has open is never overwritten.
   const stamp = new Date().toISOString().replace(/\..*$/, "").replace(/[-:]/g, "").replace("T", "-");
+  if (payload.kind === "gift-certificate") return `runners-life-gift-certificate-${stamp}-${randomUUID().slice(0, 8)}.pdf`;
   if (payload.kind === "calibration") return `runners-life-calibration-${payload.mode}-${stamp}.pdf`;
   const model = payload.labels.length === 1 ? payload.labels[0].model.trim() : "selected-labels";
   const safeModel = (model || "shoe-labels").replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replace(/\s+/g, "-").slice(0, 80);
@@ -150,7 +162,11 @@ async function removeOldPdfs(): Promise<void> {
   }
 }
 
-async function runPrint(payload: PrintPayload): Promise<PrintResult> {
+async function runPrint(payload: PrintJobPayload): Promise<PrintResult> {
+  if (payload.kind === "gift-certificate") {
+    const error = certificateError(payload.certificate);
+    if (error) return { success: false, reason: error };
+  }
   const printWindow = new BrowserWindow({
     show: false,
     width: 1200,
@@ -226,7 +242,7 @@ app.whenReady().then(() => {
     saveQueue = saveQueue.catch(() => undefined).then(() => saveStoredData(data));
     return saveQueue;
   });
-  ipcMain.handle("print:run", (_event, payload: PrintPayload) => runPrint(payload));
+  ipcMain.handle("print:run", (_event, payload: PrintJobPayload) => runPrint(payload));
 
   const updater = new Updater({
     onChange: (state) => {
