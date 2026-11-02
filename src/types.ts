@@ -116,7 +116,7 @@ export type PrintJobPayload = PrintPayload | GiftCertificatePrintPayload;
 export interface PrintResult {
   success: boolean;
   reason?: string;
-  /** The PDF that was written; it is shown selected in File Explorer / Finder. */
+  /** The PDF that was written and opened in the application's PDF preview. */
   outputPath?: string;
 }
 
@@ -157,7 +157,7 @@ export interface UpdateState {
 export interface ElectronAPI {
   loadData: () => Promise<AppData | null>;
   saveData: (data: AppData) => Promise<void>;
-  /** Renders labels or a gift certificate to a PDF and shows it in File Explorer / Finder for printing. */
+  /** Renders labels or a gift certificate to a PDF and opens an internal preview for printing. */
   print: (payload: PrintJobPayload) => Promise<PrintResult>;
   onPrintPayload: (callback: (jobId: string, payload: PrintJobPayload) => void) => () => void;
   notifyPrintReady: (jobId: string) => void;

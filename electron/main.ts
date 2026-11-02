@@ -163,6 +163,37 @@ async function removeOldPdfs(): Promise<void> {
   }
 }
 
+async function openPdfPreview(filePath: string): Promise<void> {
+  const preview = new BrowserWindow({
+    title: "Print PDF — Runners Life",
+    width: 1200,
+    height: 900,
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    parent: mainWindow ?? undefined,
+    icon: appIconPath(),
+    webPreferences: {
+      plugins: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+  pinToStableExe(preview);
+  preview.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  preview.webContents.on("will-navigate", (event) => event.preventDefault());
+  preview.on("page-title-updated", (event) => event.preventDefault());
+  try {
+    await preview.loadFile(filePath);
+    preview.show();
+    preview.focus();
+  } catch (error) {
+    if (!preview.isDestroyed()) preview.destroy();
+    throw error;
+  }
+}
+
 async function runPrint(payload: PrintJobPayload): Promise<PrintResult> {
   if (payload.kind === "gift-certificate") {
     const error = certificateError(payload.certificate);
@@ -202,9 +233,7 @@ async function runPrint(payload: PrintJobPayload): Promise<PrintResult> {
         await fs.mkdir(pdfFolder(), { recursive: true });
         const filePath = path.join(pdfFolder(), pdfFileName(payload));
         await fs.writeFile(filePath, pdf);
-        // Show the file selected in Explorer / Finder rather than opening it: on the shop computer the default
-        // viewer (Acrobat) is too slow to use, so the PDF is dragged into Chrome and printed from there.
-        shell.showItemInFolder(filePath);
+        await openPdfPreview(filePath);
         finish({ success: true, outputPath: filePath });
       } catch (error) {
         finish({ success: false, reason: error instanceof Error ? error.message : "Unable to create the PDF." });

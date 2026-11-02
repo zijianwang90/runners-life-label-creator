@@ -66,7 +66,7 @@ export function GiftCertificateDialog({ certificate, printing, onChange, onClose
             <div className="gift-preview"><GiftCertificateSvg certificate={certificate} /></div>
           </div>
           <footer className="modal-footer">
-            <p className="gift-help">Letter · Saves a PDF, then you print from Chrome.<br />Paper size: Letter. More settings → Scale → Default (100%).</p>
+            <p className="gift-help">Letter · Preview and print inside the app.<br />Click the PDF printer icon. Use Letter paper at 100% scale.</p>
             <button className="secondary-button" type="button" disabled={printing} onClick={onClose}>Cancel</button>
             <button className="primary-button" type="submit" disabled={printing || !!error}><Printer size={17} />{printing ? "Creating PDF…" : "Create PDF to print"}</button>
           </footer>

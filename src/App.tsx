@@ -261,7 +261,7 @@ export default function App() {
         calibration: data.settings.calibration
       });
       if (result.success) {
-        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} saved as a PDF — it is selected in the folder that just opened. Drag it into Chrome and print with Scale set to Default.`, "success");
+        showToast(`${kind === "labels" ? "Labels" : "Calibration page"} opened in the PDF preview. Click the printer icon to print at 100% scale.`, "success");
         if (kind === "labels") {
           setPrintOpen(false);
           updateCart(() => []);
@@ -284,7 +284,7 @@ export default function App() {
       if (result.success) {
         setData((current) => current ? { ...current, settings: { ...current.settings, giftCertificateSigner: certificate.signer } } : current);
         setCertificate(null);
-        showToast("Gift certificate saved as a PDF — it is selected in the folder that just opened. Print from Chrome on Letter paper with Scale set to Default.", "success");
+        showToast("Gift certificate opened in the PDF preview. Click the printer icon and use Letter paper at 100% scale.", "success");
       } else showToast(result.reason || "Could not create the PDF.", "error");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not create the PDF.", "error");
