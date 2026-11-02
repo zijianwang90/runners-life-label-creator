@@ -23,6 +23,7 @@ function renderJob(patch: Partial<PrintPayload>) {
     kind: "labels",
     labels: [shoe("a", 13)],
     mode: "a4",
+    paperSize: "a4",
     currencySymbol: "$",
     labelSize: { ...defaultSettings.labelSize },
     modelTextScale: defaultSettings.modelTextScale,
@@ -76,6 +77,18 @@ describe("print document at other label sizes", () => {
     expect(stack.style.top).toBe("28.5mm");
     expect(container.querySelector("style")!.textContent).toContain("size: A4 portrait");
     expect(container.querySelector<HTMLElement>(".print-document")!.style.getPropertyValue("--page-w")).toBe("210mm");
+  });
+
+  it("prints on Letter when that is the paper: landscape for 220 × 23 mm, portrait for 180 × 30 mm", () => {
+    const wide = renderJob({ paperSize: "letter" });
+    expect(wide.container.querySelector("style")!.textContent).toContain("size: Letter landscape");
+    expect(wide.container.querySelector<HTMLElement>(".a4-label-stack")!.style.left).toBe("29.7mm");
+    wide.unmount();
+    const narrow = renderJob({ paperSize: "letter", labelSize: { widthMm: 180, heightMm: 30 } });
+    expect(narrow.container.querySelector("style")!.textContent).toContain("size: Letter portrait");
+    const root = narrow.container.querySelector<HTMLElement>(".print-document")!;
+    expect([root.style.getPropertyValue("--page-w"), root.style.getPropertyValue("--page-h")]).toEqual(["215.9mm", "279.4mm"]);
+    expect(narrow.container.querySelectorAll(".a4-print-page")[0].querySelectorAll(".a4-label-slot")).toHaveLength(8);
   });
 
   it("sets the page size of single-label printing to the label size", () => {

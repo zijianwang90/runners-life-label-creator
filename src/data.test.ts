@@ -11,6 +11,7 @@ describe("label backup normalization", () => {
     expect(data.version).toBe(1);
     expect(data.shoes).toHaveLength(1);
     expect(data.settings.printMode).toBe("a4");
+    expect(data.settings.paperSize).toBe("letter");
   });
 
   it("clamps imported quantities and calibration values", () => {

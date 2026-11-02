@@ -7,6 +7,7 @@ import { clampLabelSize, clampTextScale, DEFAULT_LABEL_SIZE, TEXT_SCALE_LIMITS }
 export const defaultSettings: AppSettings = {
   currencySymbol: "$",
   printMode: "a4",
+  paperSize: "letter",
   labelSize: { ...DEFAULT_LABEL_SIZE },
   modelTextScale: TEXT_SCALE_LIMITS.model.default,
   featureTextScale: TEXT_SCALE_LIMITS.feature.default,
@@ -92,6 +93,8 @@ export function normalizeAppData(input: unknown): AppData {
         ? rawSettings.currencySymbol.slice(0, 3)
         : "$",
       printMode: rawSettings.printMode === "custom" ? "custom" : "a4",
+      // The shop prints on Letter, so anything saved without a paper choice gets it.
+      paperSize: rawSettings.paperSize === "a4" ? "a4" : "letter",
       labelSize: clampLabelSize(rawSettings.labelSize),
       modelTextScale: clampTextScale("model", rawSettings.modelTextScale),
       featureTextScale: clampTextScale("feature", rawSettings.featureTextScale),

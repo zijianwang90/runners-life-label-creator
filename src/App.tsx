@@ -246,6 +246,7 @@ export default function App() {
         kind,
         labels: kind === "labels" ? printQueue : [],
         mode: data.settings.printMode,
+        paperSize: data.settings.paperSize,
         currencySymbol: data.settings.currencySymbol,
         labelSize: data.settings.labelSize,
         modelTextScale: data.settings.modelTextScale,
@@ -302,6 +303,8 @@ export default function App() {
             <button className="primary-button add-button" onClick={addShoe}><Plus size={17} /> Add shoe</button>
           </div>
 
+          <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} textScales={data.settings} onTextScalesChange={updateTextScales} />
+
           <SelectionBar
             shownCount={filteredShoes.length}
             selectedCount={selectedIds.size}
@@ -349,7 +352,6 @@ export default function App() {
             })}
           </div>
         </section>
-        <PreviewPanel shoe={activeShoe} currencySymbol={data.settings.currencySymbol} labelSize={data.settings.labelSize} onLabelSizeChange={updateLabelSize} textScales={data.settings} onTextScalesChange={updateTextScales} />
       </main>
 
       <footer className="app-footer"><span>Runners Life Label Creator v{appVersion}{updater.state && <> · <button className="link-button" onClick={openUpdates}>Check for updates</button></>}</span><span>Offline data · {formatLabelSize(data.settings.labelSize)} label · approved Scheme A system</span></footer>

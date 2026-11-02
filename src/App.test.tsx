@@ -81,6 +81,33 @@ describe("print list (cart)", () => {
   });
 });
 
+describe("preview strip", () => {
+  it("sits above the list, names the previewed label, and keeps the label settings in a popover", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "Kinvara 16" });
+    const strip = within(screen.getByRole("region", { name: "Label preview" }));
+    expect(strip.getByText("Endorphin Speed 5")).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Label size and text size" })).toBeNull();
+
+    fireEvent.click(strip.getByRole("button", { name: /label size & text/i }));
+    const settings = within(screen.getByRole("dialog", { name: "Label size and text size" }));
+    expect(settings.getByRole("spinbutton", { name: /width/i })).toBeTruthy();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Label size and text size" })).toBeNull();
+
+    fireEvent.click(strip.getByRole("button", { name: /label size & text/i }));
+    fireEvent.pointerDown(screen.getByPlaceholderText("Search model or brand"));
+    expect(screen.queryByRole("dialog", { name: "Label size and text size" })).toBeNull();
+  });
+
+  it("says what is missing on the previewed label", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "Unpriced" });
+    fireEvent.click(document.querySelector('[data-shoe-id="c"] .shoe-summary')!);
+    expect(within(screen.getByRole("region", { name: "Label preview" })).getByText(/enter a price/i)).toBeTruthy();
+  });
+});
+
 describe("incomplete labels", () => {
   it("say what is missing and open the editor instead of adding, keeping the search", async () => {
     render(<App />);
