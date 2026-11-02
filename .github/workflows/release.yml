@@ -45,6 +45,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check that commits are in English
+        # Release notes are generated from these commits, and users read English.
+        run: node scripts/check-english.mjs --commits "$(git describe --tags --abbrev=0)..HEAD"
       - name: Work out the next version
         id: next
         env:
