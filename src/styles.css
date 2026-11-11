@@ -483,6 +483,23 @@ fieldset { min-width: 0; }
 .update-notes pre { margin: 0; padding: 10px 12px; max-height: 220px; overflow: auto; font: inherit; font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 .spin { animation: spin 900ms linear infinite; }
 
+/* Moving the workspace between computers */
+.data-dialog { width: min(640px, 95vw); }
+.data-transfer-body { display: flex; flex-direction: column; gap: 12px; }
+.data-transfer-intro { margin: 0 0 4px; color: #4d5056; font-size: 14px; line-height: 1.5; }
+.data-transfer-option { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 13px; padding: 14px; background: #fafafb; border: 1px solid var(--line); border-radius: 8px; }
+.data-transfer-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--red); background: #fff0f2; border-radius: 7px; }
+.data-transfer-option h3 { margin: 0 0 3px; font-family: "Roboto Condensed", sans-serif; font-size: 18px; line-height: 1.1; }
+.data-transfer-option p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.data-transfer-option .primary-button,
+.data-transfer-option .secondary-button { min-height: 36px; white-space: nowrap; }
+.data-transfer-note { margin: 2px 0 0; color: #8a8d94; font-size: 11px; }
+@media (max-width: 560px) {
+  .data-transfer-option { grid-template-columns: 42px minmax(0, 1fr); }
+  .data-transfer-option .primary-button,
+  .data-transfer-option .secondary-button { grid-column: 1 / -1; }
+}
+
 /* Compact catalog: print controls stay available even when the editor is closed. */
 .shoe-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .shoe-list > div { flex-shrink: 0; }

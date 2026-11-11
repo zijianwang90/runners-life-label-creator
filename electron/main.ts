@@ -1,8 +1,17 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from "electron";
 import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import type { AppData, LabelSize, PrintJobPayload, PrintPayload, PrintResult } from "../src/types";
+import type {
+  AppData,
+  DataBackup,
+  DataTransferResult,
+  ImportDataResult,
+  LabelSize,
+  PrintJobPayload,
+  PrintPayload,
+  PrintResult
+} from "../src/types";
 import { clampLabelSize, sheetLayout } from "../src/utils/labelSize";
 import { certificateError } from "../src/utils/giftCertificate";
 import { Updater } from "./updater";
@@ -59,6 +68,49 @@ async function saveStoredData(data: AppData): Promise<void> {
   } catch {
     await fs.copyFile(tempPath, dataFilePath());
     await fs.unlink(tempPath);
+  }
+}
+
+const dataDialogParent = () => mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+
+async function exportDataFile(backup: DataBackup): Promise<DataTransferResult> {
+  const stamp = /^\d{4}-\d{2}-\d{2}/.test(backup.exportedAt) ? backup.exportedAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const options: Electron.SaveDialogOptions = {
+    title: "Export Runners Life data",
+    defaultPath: path.join(app.getPath("documents"), `Runners-Life-Label-Data-${stamp}.json`),
+    filters: [{ name: "Runners Life data", extensions: ["json"] }],
+    properties: ["createDirectory", "showOverwriteConfirmation"]
+  };
+  const parent = dataDialogParent();
+  const result = parent ? await dialog.showSaveDialog(parent, options) : await dialog.showSaveDialog(options);
+  if (result.canceled || !result.filePath) return { success: false, canceled: true };
+  try {
+    await fs.writeFile(result.filePath, JSON.stringify(backup, null, 2), "utf8");
+    return { success: true, filePath: result.filePath };
+  } catch (error) {
+    return { success: false, reason: error instanceof Error ? error.message : "Could not write the data file." };
+  }
+}
+
+async function importDataFile(): Promise<ImportDataResult> {
+  const options: Electron.OpenDialogOptions = {
+    title: "Import Runners Life data",
+    filters: [{ name: "Runners Life data", extensions: ["json"] }],
+    properties: ["openFile"]
+  };
+  const parent = dataDialogParent();
+  const result = parent ? await dialog.showOpenDialog(parent, options) : await dialog.showOpenDialog(options);
+  const filePath = result.filePaths[0];
+  if (result.canceled || !filePath) return { success: false, canceled: true };
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return { success: true, filePath, data: JSON.parse(raw) as unknown };
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    return {
+      success: false,
+      reason: code ? "Could not read the selected data file." : "The selected data file is not valid JSON."
+    };
   }
 }
 
@@ -272,6 +324,8 @@ app.whenReady().then(() => {
     saveQueue = saveQueue.catch(() => undefined).then(() => saveStoredData(data));
     return saveQueue;
   });
+  ipcMain.handle("data:export", (_event, backup: DataBackup) => exportDataFile(backup));
+  ipcMain.handle("data:import", () => importDataFile());
   ipcMain.handle("print:run", (_event, payload: PrintJobPayload) => runPrint(payload));
 
   const updater = new Updater({

@@ -11,7 +11,7 @@ Offline desktop application for editing and printing Runners Life shoe-wall labe
 - **Print list (cart)**: click `Add to print list` on any row for one copy, then set the copies with that row's stepper; going below 1 removes the label. Tick several labels to add one copy of each at once (incomplete ones stay ticked). Click a row to see it in the preview without opening the editor; a row with something missing says what, and `N to complete` lists only those.
 - **Gift certificates**: the header’s `Gift certificate` button opens a form with a live preview. Enter an amount (or choose $50 / $100 / $200), optional To / From names and a typed signature. Empty names and signatures keep their label and blank line for handwriting. Ref # defaults to the local date in `YYYYMMDD` format and can be edited (e.g. `20261102-2`) or reset with `Today`. `Create PDF to print` makes one Letter portrait page and opens it in the app's PDF preview; click the printer icon and use paper size **Letter** at **100%** scale. The last successfully printed signer is remembered locally; new certificates start with blank amount and customer names. There is no certificate history or automatic reference numbering, and certificate printing does not change the shoe print list. Fonts and the logo are bundled for offline printing.
 - Live SVG preview, full width above the list, with the approved red/white regular and oversized SALE-seal variants.
-- Everything is saved automatically on this computer; there is nothing to import or export.
+- **Backup and transfer**: the header’s `Export / import` button saves every label, the print list and all settings to one JSON file, and imports that file on another computer. Import asks before it replaces the labels and settings on the current computer. Nothing is uploaded.
 - **Adjustable label size**: change the label's width and height under the preview, in `Label size & text` (fixed ranges 160–240 mm × 23–30 mm; if a change would push the shape outside 6:1–10.5:1 (so 180 × 30 mm is the squarest), the other value is adjusted automatically and a notice explains it; narrower labels shrink the logo and price blocks to keep the text readable). The preview, print layout, A4 sheet and PDF follow; `Reset` returns to 220 × 23 mm.
 - **Text size**: separate sliders for the model name, selling points, price, the struck-through regular price on sale labels, and the SALE seal. 100% is the shop standard (model 130%, selling points 150%, price 120% of the original approved design); each can go smaller or larger (model and selling points 60–130%, price 70–115%, regular price 65–130%, seal 80–120%). Each shows its print size; text too long for its space still shrinks to fit.
 - **Sale %**: type a discount (e.g. 25) instead of a sale price and the sale price is worked out to the cent; typing a sale price updates the percent.
@@ -80,6 +80,14 @@ Every download must come from this repository's own release files and match the 
 Versions before the first release with the updater cannot update themselves; install that one by hand.
 
 The repository the app reads is set by `UPDATE_REPO` in [electron/updater.ts](electron/updater.ts). It has to be public, because the app carries no GitHub token.
+
+## Moving data to another computer
+
+1. On the old computer, click **Export / import** at the top and choose **Export data**. Pick where to save the JSON file; the suggested name includes the date.
+2. Install the app on the new computer.
+3. On the new computer, click **Export / import**, choose **Import data**, select the file and confirm. The imported labels, print list and settings replace the current workspace.
+
+The file is plain JSON and stays on your computers. It can also be read by newer versions if it was exported by an older one, and a raw `labels.json` copied from the old computer's user-data folder can be imported the same way.
 
 ## Publishing a release
 

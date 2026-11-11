@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Download, Gift, LoaderCircle, Plus, Search, Tags, TriangleAlert, X } from "lucide-react";
+import { Check, Database, Download, Gift, LoaderCircle, Plus, Search, Tags, TriangleAlert, X } from "lucide-react";
 import { brandNames } from "./assets";
 import { createDefaultData, createEmptyShoe, normalizeAppData } from "./data";
 import { AiPromptDialog, type SellingPointUpdate } from "./components/AiPromptDialog";
+import { DataTransferDialog } from "./components/DataTransferDialog";
 import { PreviewPanel } from "./components/PreviewPanel";
 import { PrintDialog } from "./components/PrintDialog";
 import { GiftCertificateDialog } from "./components/GiftCertificateDialog";
@@ -10,11 +11,12 @@ import { certificateError, createGiftCertificate } from "./utils/giftCertificate
 import { SelectionBar } from "./components/SelectionBar";
 import { ShoeEditor } from "./components/ShoeEditor";
 import { UpdateDialog } from "./components/UpdateDialog";
-import type { AppData, AppSettings, BrandId, GiftCertificate, LabelSize, PrintCartItem, ShoeLabel, TextScales, UpdateStatus } from "./types";
+import type { AppData, AppSettings, BrandId, DataBackup, GiftCertificate, LabelSize, PrintCartItem, ShoeLabel, TextScales, UpdateStatus } from "./types";
 import { BRAND_IDS } from "./types";
 import { addToCart, cartCopyCount, cartLabels, removeFromCart, setCartCopies } from "./utils/cart";
 import { validateShoe } from "./utils/labels";
 import { formatLabelSize } from "./utils/labelSize";
+import { backupFileName, createDataBackup, readDataBackup } from "./utils/dataTransfer";
 import { useUpdater } from "./update/useUpdater";
 
 const appIconUrl = `${import.meta.env.BASE_URL}app-icon.svg`;
@@ -37,6 +39,37 @@ async function saveData(data: AppData): Promise<void> {
   else localStorage.setItem("runners-life-labels", JSON.stringify(data));
 }
 
+function downloadBackup(backup: DataBackup): void {
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = backupFileName(new Date(backup.exportedAt));
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function chooseBackupFile(): Promise<unknown | null> {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) { resolve(null); return; }
+      try {
+        resolve(JSON.parse(await file.text()) as unknown);
+      } catch {
+        reject(new Error("The selected data file is not valid JSON."));
+      }
+    };
+    input.click();
+  });
+}
+
 export default function App() {
   const [data, setData] = useState<AppData | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("loading");
@@ -54,6 +87,8 @@ export default function App() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [appVersion, setAppVersion] = useState("1.0.0");
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
+  const [dataBusy, setDataBusy] = useState<"export" | "import" | null>(null);
   const updater = useUpdater();
   const announcedUpdate = useRef("");
   const initialized = useRef(false);
@@ -291,6 +326,68 @@ export default function App() {
     } finally { giftPrintPending.current = false; setPrinting(false); }
   }
 
+  async function exportAllData() {
+    if (!data || dataBusy) return;
+    setDataBusy("export");
+    try {
+      const backup = createDataBackup(data, appVersion);
+      if (window.electronAPI?.exportData) {
+        const result = await window.electronAPI.exportData(backup);
+        if (result.canceled) return;
+        if (!result.success || !result.filePath) {
+          showToast(result.reason || "Could not export the data file.", "error");
+          return;
+        }
+        showToast(`Data exported to ${result.filePath}.`, "success");
+      } else {
+        downloadBackup(backup);
+        showToast("Data file downloaded.", "success");
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not export the data file.", "error");
+    } finally {
+      setDataBusy(null);
+    }
+  }
+
+  async function importAllData() {
+    if (!data || dataBusy) return;
+    setDataBusy("import");
+    try {
+      let raw: unknown;
+      if (window.electronAPI?.importData) {
+        const result = await window.electronAPI.importData();
+        if (result.canceled) return;
+        if (!result.success) {
+          showToast(result.reason || "Could not import the data file.", "error");
+          return;
+        }
+        raw = result.data;
+      } else {
+        raw = await chooseBackupFile();
+        if (raw === null) return;
+      }
+
+      const imported = readDataBackup(raw);
+      const count = imported.shoes.length;
+      const replace = window.confirm(`Import ${count} label${count === 1 ? "" : "s"} and settings? This replaces the labels, print list and settings on this computer.`);
+      if (!replace) return;
+
+      setData(imported);
+      setActiveId(imported.shoes[0]?.id ?? "");
+      setExpandedId(null);
+      setSelectedIds(new Set());
+      setPrintOpen(false);
+      clearFilters();
+      setDataOpen(false);
+      showToast(`Imported ${count} label${count === 1 ? "" : "s"} and all settings.`, "success");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not import the data file.", "error");
+    } finally {
+      setDataBusy(null);
+    }
+  }
+
   if (!data) return <div className="app-loading"><div className="loading-mark" /><p>Loading label workspace…</p></div>;
 
   return (
@@ -298,6 +395,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-brand"><img src={appIconUrl} alt="Runners Life" /><div><strong>Label Creator</strong><span>SHOE WALL SYSTEM</span></div></div>
         <div className="header-actions">
+          <button className="secondary-button" onClick={() => setDataOpen(true)}><Database size={17} /> Export / import</button>
           <button className="secondary-button" onClick={() => setCertificate(createGiftCertificate(data.settings.giftCertificateSigner))}><Gift size={17} /> Gift certificate</button>
           <UpdateButton status={updateStatus} onClick={openUpdates} />
           <span className={`save-state ${saveState}`}><Check size={14} />{saveState === "saving" ? "Saving…" : saveState === "error" ? "Save error" : "Saved locally"}</span>
@@ -391,6 +489,14 @@ export default function App() {
       />
       {certificate && <GiftCertificateDialog certificate={certificate} printing={printing} onChange={setCertificate} onClose={() => { if (!giftPrintPending.current) setCertificate(null); }} onPrint={() => void printGiftCertificate()} />}
       <AiPromptDialog open={aiOpen} allShoes={shoes} selected={selectedShoes} onClose={() => setAiOpen(false)} onApply={applySellingPoints} />
+      <DataTransferDialog
+        open={dataOpen}
+        labelCount={shoes.length}
+        busy={dataBusy}
+        onClose={() => { if (!dataBusy) setDataOpen(false); }}
+        onExport={() => void exportAllData()}
+        onImport={() => void importAllData()}
+      />
       {updater.state && (
         <UpdateDialog
           open={updateOpen}

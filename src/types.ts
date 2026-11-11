@@ -83,6 +83,30 @@ export interface AppData {
   settings: AppSettings;
 }
 
+/**
+ * One file that moves the whole workspace to another computer. `data` is the same shape the
+ * desktop app keeps in its user-data folder, so older backup files without this wrapper still import.
+ */
+export interface DataBackup {
+  format: "runners-life-label-creator-backup";
+  backupVersion: 1;
+  appVersion: string;
+  exportedAt: string;
+  data: AppData;
+}
+
+export interface DataTransferResult {
+  success: boolean;
+  canceled?: boolean;
+  filePath?: string;
+  reason?: string;
+}
+
+export interface ImportDataResult extends DataTransferResult {
+  /** The parsed JSON file; the renderer checks and normalizes it before replacing anything. */
+  data?: unknown;
+}
+
 export interface PrintPayload {
   jobId?: string;
   kind: "labels" | "calibration";
@@ -157,6 +181,8 @@ export interface UpdateState {
 export interface ElectronAPI {
   loadData: () => Promise<AppData | null>;
   saveData: (data: AppData) => Promise<void>;
+  exportData: (backup: DataBackup) => Promise<DataTransferResult>;
+  importData: () => Promise<ImportDataResult>;
   /** Renders labels or a gift certificate to a PDF and opens an internal preview for printing. */
   print: (payload: PrintJobPayload) => Promise<PrintResult>;
   onPrintPayload: (callback: (jobId: string, payload: PrintJobPayload) => void) => () => void;
